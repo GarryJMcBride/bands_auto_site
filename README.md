@@ -1,18 +1,8 @@
 # bands_auto_site
 
-<br>
+## Documentation
 
-## Tools Used for Development
-
-| Tool         | Purpose                                     
-|--------------|---------------------------------------------
-| **Node.js**  | Runs JavaScript outside the browser - Locally on Server
-| **TS/JS**    | Web Languages - TypeScript compiles to JavaScript
-| **python**   | Python Language
-
----
-
-<br>
+See `/docs`
 
 ## Prerequisites
 
