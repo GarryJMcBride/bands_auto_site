@@ -1,11 +1,44 @@
 # bands_auto_site
 
-## 
+<br>
 
+## Tools Used for Development
 
-### Create Python Environment
+| Tool         | Purpose                                     
+|--------------|---------------------------------------------
+| **Node.js**  | Runs JavaScript outside the browser - Locally on Server
+| **TS/JS**    | Web Languages - TypeScript compiles to JavaScript
+| **python**   | Python Language
+
+---
+
+<br>
+
+## Prerequisites
+
+### Node.js
+
+You must have [Node.js](https://nodejs.org/) installed.
+
+Check if Node and npm are available:
 
 ```bash
+node -v
+npm -v
+```
+
+If not installed, download from: https://nodejs.org/
+
+---
+
+<br>
+
+## Setup Environment
+
+### Python
+
+```bash
+# create Python Environment
 python -m venv .venv
 ```
 
@@ -46,3 +79,15 @@ uv sync --dev
 # sync all development packages
 uv sync --no-dev
 ```
+
+### JavaScript
+
+Install JavaScript Dependicies from `package.json`
+
+```bash
+npm init -y                     # Init project with defaults (creates package.json)
+npm install                     # Install all dependencies from package.json
+```
+---
+
+<br>
