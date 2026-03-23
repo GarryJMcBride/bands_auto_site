@@ -25,7 +25,9 @@ If not installed, download from: https://nodejs.org/
 
 <br>
 
-## Setup Environment
+## Setup/Configure Environment
+
+When working between branches, or pulling updates from git, the language environments will need to be updated per branch. Not all of the following commands will need to be run when development is on going. Just need to update the packages for `python` and `npm`.
 
 ### Python
 
@@ -60,7 +62,7 @@ uv add <package_name>
 uv sync
 ```
 
-# TODO: Fix packages so that there is `core` and `dev
+TODO: Fix packages so that there is `core` and `dev`
 
 ```bash
 # install only Core packages
@@ -77,8 +79,30 @@ uv sync --no-dev
 Install JavaScript Dependicies from `package.json`
 
 ```bash
-npm init -y                     # Init project with defaults (creates package.json)
-npm install                     # Install all dependencies from package.json
+# Init project with defaults (creates package.json)
+npm init -y
+```
+
+```bash
+# Install all dependencies from package.json
+npm install
+
+# or
+
+npm ci  # Clean install (faster, uses package-lock.json)
+```
+
+```bash
+# Install/Uninstall specific package
+npm install <package>           # Install a package (adds to dependencies)
+npm install <package> --save-dev  # Install as dev dependency
+npm install -g <package>        # Install globally
+npm uninstall <package>         # Remove a package
+```
+
+```bash
+# Typically builds for production
+npm run build                   
 ```
 ---
 
