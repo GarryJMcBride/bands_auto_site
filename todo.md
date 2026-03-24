@@ -1,4 +1,4 @@
-- Update Links for CSS Icons. Need to look at how SCSS is set up first before updating links - Icons are not showing on UI
+- Update Links for CSS Icons and fonts. Need to look at how SCSS is set up first before updating links - Icons are not showing on UI and fonts need to do the same
 - Implement TypeScript
 - Consider replacing JQuery? Its rather static and we will be using JavaScript for backend functionality like API Requests to python
     - or just have static JS/JQuery files and then have TS/JS seperate for backend logic
