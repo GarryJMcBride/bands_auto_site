@@ -1,0 +1,9 @@
+- Update Links for CSS Icons. Need to look at how SCSS is set up first before updating links - Icons are not showing on UI
+- Implement TypeScript
+- Consider replacing JQuery? Its rather static and we will be using JavaScript for backend functionality like API Requests to python
+    - or just have static JS/JQuery files and then have TS/JS seperate for backend logic
+- Currently the linkes from the HTML to JS and CSS files are `../../` as its local
+    - Since we are using FASTAPI, They need to be mounted in `app.py`
+    - Get process together for firing up server for development as using VS Code Live server is ok for jumping back REPOS, but not whenever we start fully integrating with FASTAPI
+- Create `main()` for uvicorn in a `main()`
+- Install linting and pylance

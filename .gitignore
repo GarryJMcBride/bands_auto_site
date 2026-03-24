@@ -1,4 +1,4 @@
-/src/images
+/src/frontend/static/images
 /.venv
 /node_modules
 /.env
