@@ -150,4 +150,6 @@ TODO: TBD
 
 ## Security
 
+## Uvicorn for Worker
+
 ## Testing Functionality on Testing Envrionment (T-800/T-X)
