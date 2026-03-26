@@ -1,3 +1,45 @@
+# Development Journal
+
+TODO: Add links to URLS for tools and resources
+
+## Using a Static website template from Envato
+Utilising a static web template from `envato` marketplace are sometimes packaged by the developers in different ways. Links between files are sometimes different, have not seen one using a Backend framework yet, or frontend framework. Currently most have used static `HTML, CSS and JS` files use relative paths to find eachother.
+
+```bash
+# Example of Paths before template edited
+
+# HTML finds JavaScript
+<script src="../js/jquery.js"></script>
+
+# HTML finds CSS Style sheets
+<link href="../css/bootstrap.min.css" rel="stylesheet">
+
+# HTML finds HTML
+<li class="dropdown"><a href="index-main.html">Home</a>
+
+# HTML finds Images
+<img src="../images/update-26-02-2021/resources/feature-3-1.jpg" alt="">
+
+# CSS finds Images
+background-image: url(../images/background/home-portfolio-bg-1-1.png);
+
+# CSS Finds local font files
+src: url("../fonts/fa-brands-400.eot");
+ 
+```
+
+> Some folder are higher or deeper and call either Fonts or Images from `../../` or `/fonts`
+
+TODO: revamp this content below to highlight how using FASTAPI Endpoints changes the use of relative paths and requires mounting of static files. Everything on the web is a request, but Python has been chosen to serve the frontend to the DOM, or browser sever. Relative links are now risky as the endpoints can change the paths behind the screens, best to use absolute paths for files that will be pushed or made static by FASTAPI. *See chatGPT `relative paths in fastapi` and `understanding the browser 1 and 2`
+
+###########################################
+###########################################
+###########################################
+###########################################
+###########################################
+
+Content to fix:
+
 ## Changing Requests to the Browser due to FastAPI use
 
 ### Synopsis
@@ -43,3 +85,69 @@ What will happen if I do a FastAPI call for the "/" page which will be "index.ht
 4. Your code runs
 5. Response sent back (HTML / redirect / JSON)
 6. Browser renders it
+
+###########################################
+###########################################
+###########################################
+###########################################
+###########################################
+
+## Decide on Languages
+### Type Safety
+#### Python
+- Type annotations for Python to compile at Run time to help with Data and Robust code
+#### JavaScript
+- TypeScript used for type safety for JavaScript backend logic.
+- `.ts` files compile to `.js` at runtime, collected in a file that holds all links to `.js` files.
+#### JavaScript (QJuery)
+JQuery already in static website template file from Envato for UI Behaviour. This is JavaScript, but only for behaviour, transitons and movements of UI elements. 
+
+Plan to use JavaScript for some backend communcating logic, which will be compiled from TypeScript. Will leave `JQuery` files to stay static and seperate from logic JavaScript files to seperate the UI from the partial backend architecture.
+
+> Wanted to clarify this as same langauge used in different aspects of application
+
+## Code Presentation
+### SCSS
+- Use `SASS` to structure, format and tidy `CSS` code. SASS compiles `.scss` files to `.css`.
+- `.scss` files allow nesting, variables and modular files imported, keeps `.css` from bloating up REPO.
+
+### Folder Structure
+TODO: Add Folder Structure
+
+## User Interface Interaction/Behaviour
+- `JQuery` used for UI Behaviour
+    - Should be seperated from `JavaScript` for backend functionality calls to python or other settings
+
+## Set up Developer Environment in IDE
+
+- Install `git` and create REPO connection with remote on `github`
+- Have `README.md`
+- Install `python` on local OS
+- Install `node.js` on local OS
+- Create `python` virtual environment
+- Pip Install `uv` for Python Package Dependencies
+- Initiate `uv` and see created `pyproject.toml` and `uv.lock`
+- Initiate `package.json` or install `npm` packages that already exist
+    - If frontend web template `package.json` may include packages
+    - If not then JavaScipt/JQuery will be static
+- Create `docs` folder for Code and Development Documentation
+
+## Deciding on a Backend Framework
+
+Options for backend frameworks are vast and broad. First the correct language needs to be chosen, and then a framework can be defined. Using `JavaScript` frameworks for the backend would make sense as the front end is written in `JS`. Python vs JavaScript for the back end can be experimental, and sites can be build with both and they can be weighed/compared. 
+
+For now we use Python in the backend and `FastAPI` as a starting point. FastAPI is good for light UI web project and heavy API calls to the Backend. If advanving. It covers other aspects like security, user validation amongst others. Python also works good with most Databases. 
+
+If wanting to experiment, consider using more heavier advanced frameworks if needed like `Django` or `Flask`.
+
+## Implementing a Frontend Framework
+
+TODO: TBD
+
+## Installing and configuring a Database
+
+## API Calls to an Email Exchange
+
+## Security
+
+## Testing Functionality on Testing Envrionment (T-800/T-X)

@@ -1,9 +1,10 @@
-- Update Links for CSS Icons and fonts. Need to look at how SCSS is set up first before updating links - Icons are not showing on UI and fonts need to do the same
+- Look at how SCSS is set up
 - Implement TypeScript
 - Consider replacing JQuery? Its rather static and we will be using JavaScript for backend functionality like API Requests to python
     - or just have static JS/JQuery files and then have TS/JS seperate for backend logic
 - Currently the linkes from the HTML to JS and CSS files are `../../` as its local
-    - Since we are using FASTAPI, They need to be mounted in `app.py`
+    - Since we are using FASTAPI, They need to be mounted in `app.py` - need to fix all paths to work when FASTAPI takes control. *See chatGPT `relative paths in fastapi` and `understanding the browser 1 and 2`
     - Get process together for firing up server for development as using VS Code Live server is ok for jumping back REPOS, but not whenever we start fully integrating with FASTAPI
 - Create `main()` for uvicorn in a `main()`
-- Install linting and pylance
+- Install ruff and pylance
+- Move `/images` on T-X into Static as its in `.gitignore` and on T-X its one folder above

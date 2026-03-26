@@ -19,6 +19,7 @@ TODO: Implement Architecture over view for Form submission
 | `Node.js`  | Runs JavaScript outside the browser - Locally on Server
 | `JQuery-UI`    | jQuery UI Widget - https://jqueryui.com/
 | `TS/JS`    | Web Languages - TypeScript compiles to JavaScript
+| `Bootstrap`    | Responsive Design - Automated Screen size adjustments
 | <br>
 | **Note Worthly Scripts/Settings**
 | `respond.js` | A CSS media query polyfill for old IE browsers, it uses XHR internally just to read your CSS files and parse media queries. 
