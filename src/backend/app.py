@@ -5,6 +5,7 @@ from pydantic import BaseModel
 import base64
 from starlette.templating import Jinja2Templates
 
+
 # Initialize FastAPI application
 app = FastAPI(
     title="B&S Auto",
@@ -12,18 +13,26 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
-# Mount static files (CSS, JS, images) to be served to the DOM
+# | Mount static files so the browser can download/render them
+# ---------------
+# | File on disk                        | URL in browser          |
+# | ----------------------------------- | ----------------------- |
+# | `src/frontend/static/js/app.js`     | `/static/js/app.js`     |
+# | `src/frontend/static/css/style.css` | `/static/css/style.css` |
 app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
-# TODO: This neeeds to be reviewed whenever we start to use typescript for backend logic
-app.mount("/js", StaticFiles(directory="src/frontend/js"), name="js")
-# Compiled folder for when TypeScript compiles to JS at runtime
-# app.mount("/dist", StaticFiles(directory="dist"), name="dist")
-# Initialize Jinja2 templates for rendering HTML templates
-templates = Jinja2Templates(directory="src/frontend/static/HTML")
 
 
-# Endpoint for the first page the user will see
+# Templates for rendering HTML templates
+# Instead of just serving it as a raw file like .JS or .CSS
+# HTML is Returned by FastAPI via endpoints
+templates = Jinja2Templates(directory="src/frontend/templates/")
+
+
+# HTML Calls these Endpoints - Page navigation handled by HTML
+# ---------------
+# Endpoint for the index page
 @app.get("/", response_class=HTMLResponse)
 def read_homepage(request: Request) -> HTMLResponse:
     """Renders the homepage template.
@@ -45,6 +54,30 @@ def read_homepage(request: Request) -> HTMLResponse:
 
     # TODO: Implement ninja for this - see docaid
     return templates.TemplateResponse("new_index.html", {"request": request})
+
+
+# Endpoint for the contact page
+@app.get("/contact", response_class=HTMLResponse)
+def read_contact_page(request: Request) -> HTMLResponse:
+    """Renders the homepage template.
+
+    Parameters
+    ----------
+    request : Request
+        The incoming HTTP request object from FastAPI.
+
+
+    Returns
+    -------
+    reponse : HTMLResponse
+        HTML template reponse containing the homepage.
+
+    """
+    # TODO: Add logging to track homepage access
+    # logging.info("Homepage accessed")
+
+    # TODO: Implement ninja for this - see docaid
+    return templates.TemplateResponse("contact.html", {"request": request})
 
 
 # Pydantic Data Model

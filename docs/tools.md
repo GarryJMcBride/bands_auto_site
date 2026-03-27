@@ -42,6 +42,8 @@ TODO: Implement Architecture over view for Form submission
 | **BACKEND**
 | `python`   | Python Language
 | `uv` | Package Manager
+| `uvicorn` | Server gateway for asyncronous Framework (FastAPI)
+| `FastAPI` | Asyncronous Framework
 
 ---
 

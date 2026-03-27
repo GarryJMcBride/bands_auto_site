@@ -107,3 +107,24 @@ npm run build
 ---
 
 <br>
+
+### Uvicorn - Server gateway
+
+```bash
+# Install dependencies
+pip install fastapi uvicorn
+```
+```bash
+# Run directly from the terminal (simplest way)
+uvicorn main:app
+# or Enable auto-reload
+uvicorn main:app --reload
+```
+```bash
+# Run on a specific port
+uvicorn main:app --reload --port 8080
+```
+```bash
+# Run on all network interfaces (accessible on your local network)
+uvicorn main:app --host 0.0.0.0 --port 8080
+```

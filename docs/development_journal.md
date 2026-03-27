@@ -136,7 +136,11 @@ TODO: Add Folder Structure
 
 Options for backend frameworks are vast and broad. First the correct language needs to be chosen, and then a framework can be defined. Using `JavaScript` frameworks for the backend would make sense as the front end is written in `JS`. Python vs JavaScript for the back end can be experimental, and sites can be build with both and they can be weighed/compared. 
 
-For now we use Python in the backend and `FastAPI` as a starting point. FastAPI is good for light UI web project and heavy API calls to the Backend. If advanving. It covers other aspects like security, user validation amongst others. Python also works good with most Databases. 
+For now we use Python in the backend and `FastAPI` as a starting point. FastAPI is good for light UI web project and heavy API calls to the Backend. If advanving. It covers other aspects like security, user validation amongst others. Python also works good with most Databases. FastAPI can be used for a simple website with forms. While it is primarily marketed as an API framework, it includes built-in tools to serve HTML pages and process standard form data.
+
+- Use FastAPI if: You plan to eventually add complex features like WebSockets, want automatic data validation (via Pydantic), or want to use the same backend for a mobile app later.
+
+- Use Flask if: You want the simplest possible setup for a "classic" website. Flask has more "website-specific" extensions (like Flask-Login or Flask-WTF) that handle things like user sessions and form security out of the box.
 
 If wanting to experiment, consider using more heavier advanced frameworks if needed like `Django` or `Flask`.
 
@@ -150,6 +154,15 @@ TODO: TBD
 
 ## Security
 
-## Uvicorn for Worker
+*See = sorceror\Self-Development\Research and Findings\Application Development\How to secure a Web App from simple attacks and keep it secure.md
+
+## Server Gateway
+
+FastAPI is an ASGI (Asynchronous Server Gateway Interface) framework. Unlike older Python web frameworks (like Flask) which are WSGI, FastAPI is built around Python's async/await and needs a server that can handle asynchronous connections. Uvicorn is that server.
+
+It's a lightning-fast ASGI server that acts as the bridge between incoming HTTP requests and your FastAPI app. Without it, your FastAPI app has no way to actually listen on a port and serve traffic. Uvicorn handles TCP/HTTP — FastAPI handles routing.
+
+- Flask needs a WSGI server (like Gunicorn or Waitress).
+- FastAPI needs an ASGI server (like Uvicorn or Hypercorn).
 
 ## Testing Functionality on Testing Envrionment (T-800/T-X)
