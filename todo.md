@@ -1,5 +1,6 @@
 - Look at how SCSS is set up
-- Implement TypeScript
+- Implement TypeScript - Use and explorer Vite for the bundle
+- Create JavaScript API Call for form data to backend
 - Consider replacing JQuery? Its rather static and we will be using JavaScript for backend functionality like API Requests to python
     - or just have static JS/JQuery files and then have TS/JS seperate for backend logic
 - Currently the linkes from the HTML to JS and CSS files are `../../` as its local
