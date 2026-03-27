@@ -9,3 +9,5 @@
 - Create `main()` for uvicorn in a `main()`
 - Install ruff and pylance
 - Move `/images` on T-X into Static as its in `.gitignore` and on T-X its one folder above
+- Remove CSS bloat - Rename classes to new names for their purpose
+    - They are fine just now due to them not being ready high priorty and they work

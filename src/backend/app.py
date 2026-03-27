@@ -53,31 +53,7 @@ def read_homepage(request: Request) -> HTMLResponse:
     # logging.info("Homepage accessed")
 
     # TODO: Implement ninja for this - see docaid
-    return templates.TemplateResponse("new_index.html", {"request": request})
-
-
-# Endpoint for the contact page
-@app.get("/contact", response_class=HTMLResponse)
-def read_contact_page(request: Request) -> HTMLResponse:
-    """Renders the homepage template.
-
-    Parameters
-    ----------
-    request : Request
-        The incoming HTTP request object from FastAPI.
-
-
-    Returns
-    -------
-    reponse : HTMLResponse
-        HTML template reponse containing the homepage.
-
-    """
-    # TODO: Add logging to track homepage access
-    # logging.info("Homepage accessed")
-
-    # TODO: Implement ninja for this - see docaid
-    return templates.TemplateResponse("contact.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 # Pydantic Data Model
