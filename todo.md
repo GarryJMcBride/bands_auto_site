@@ -11,3 +11,15 @@
 - Move `/images` on T-X into Static as its in `.gitignore` and on T-X its one folder above
 - Remove CSS bloat - Rename classes to new names for their purpose
     - They are fine just now due to them not being ready high priorty and they work
+
+
+
+--------
+Typescript installation TODO
+
+Get commands for running compiler to js seperatly
+Get it to compile to the right folders
+Move JQoery to a jquery folder and use js as the target for typescript compiler
+Get Uvicorn ro run the typescript compiler when the fastapi server is launched
+Find out more about what part Vite has to play
+Summarise Claude pages for Development_jounral.md

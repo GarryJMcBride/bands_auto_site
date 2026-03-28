@@ -22,6 +22,7 @@ app = FastAPI(
 # | `src/frontend/static/js/app.js`     | `/static/js/app.js`     |
 # | `src/frontend/static/css/style.css` | `/static/css/style.css` |
 app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
+app.mount("/static", StaticFiles(directory="src/frontend/static/comp_js"), name="static")
 
 
 # Templates for rendering HTML templates
