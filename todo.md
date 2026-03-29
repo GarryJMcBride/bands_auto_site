@@ -25,3 +25,17 @@ Typescript installation TODO
 - Summarise Claude pages for Development_jounral.md
     - Vite and the bundler regarding typescript - no need to hard code into html
     - What to do about static JQuery files and if they need updates?
+
+
+
+
+------------
+Deployment on VPS (Configuration to have multiple sites running on server)
+
+- Separate FastAPI apps per site
+- Check were all folders are mounted to by FastAPI?
+    - Will different sites mix these files if they all mount?
+    - Do FastAPI examples state to mount to static/ because they dont know context that another site is running on the same server?
+- Can/Should multiple sites share the same database?
+- Can/Should multiple sites share the same port (443)?
+- Consider using Core FASTAPI set up that can update mutliple sites when infrastructure improves of code 

@@ -25,7 +25,9 @@ If not installed, download from: https://nodejs.org/
 
 <br>
 
-## Setup/Configure Environment
+## Setup/Configure Environment - Launch FastAPI Server
+
+TODO: Split this up into useful commands vs launching the application
 
 When working between branches, or pulling updates from git, the language environments will need to be updated per branch. Not all of the following commands will need to be run when development is on going. Just need to update the packages for `python` and `npm`.
 
@@ -110,6 +112,20 @@ npm run build
 
 ### TypeScript
 
+```bash
+npm init -y          # skip if you already have a package.json
+npm install --save-dev typescript
+npx tsc --init       # generates tsconfig.json
+```
+
+- `npm run build` and `npm run watch` will call these shortcuts from `package.json`
+```bash
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  }
+```
+
 ---
 
 <br>
@@ -133,4 +149,11 @@ uvicorn main:app --reload --port 8080
 ```bash
 # Run on all network interfaces (accessible on your local network)
 uvicorn main:app --host 0.0.0.0 --port 8080
+```
+
+### Launch FastAPI Server
+
+```bash
+# run the file that holds a function to run uvicorn
+python main.py
 ```

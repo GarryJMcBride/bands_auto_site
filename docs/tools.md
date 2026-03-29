@@ -38,6 +38,7 @@ TODO: Implement Architecture over view for Form submission
 | `jarallax.min.js` | Parallax scrolling |
 | `jquery.easing.min.js` | Animation easing functions |
 | `custom-script.js` | Template's own glue code |
+| `tsconfig.json` | Master configuration for TypeScript |
 | <br>
 | **BACKEND**
 | `python`   | Python Language
@@ -56,7 +57,7 @@ TODO: Implement Architecture over view for Form submission
 
 <br>
 
-# Scripts
+# Some Scripts worth notes
 
     TODO: Consider adding this information to the actual scripts at the top of them
 
@@ -128,3 +129,35 @@ A pre-built distribution of v1.12.1 (2016), included as part of the original Env
 - **Native browser APIs** — many jQuery UI features are now available natively in modern browsers
 
 ---
+
+## tsconfig.json
+
+Configures the TypeScript compiler — which files to check, strictness rules, and output format.
+
+Key settings:
+- **Strict mode** — catches bugs, prevents accidental `undefined` errors, flags unused params/variables, enforces return types
+- **ESNext + esModuleInterop** — modern modules with safe handling of older CommonJS libraries
+- **DOM libs** — TypeScript understands `window`, `document`, `$`
+- **JSX ready** — configured for React, works fine with plain HTML/jQuery now
+- **Separate output** — source and compiled files kept in distinct folders
+- **Case-sensitive filenames + skip external lib errors** — avoids deployment issues
+
+### Types: jQuery vs Vitest
+
+**jQuery** > needs `npm install -D @types/jquery`
+- Written before TypeScript existed, so ships no type definitions
+- Lets you use `$` globally in `.ts` files without importing
+- Note: the jQuery static files already in the project are downloaded UI assets — unrelated to this install
+
+**Vitest** > no `@types` install needed
+- Modern, written in TypeScript, ships its own types
+- Only add `"vitest/globals"` to `tsconfig.json` if you want `describe`/`it` available globally without imports
+
+```bash
+{
+  "compilerOptions": {
+    ...,
+    "types": ["vitest/globals", "jquery"],
+    ...,
+}
+```
