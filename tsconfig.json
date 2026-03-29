@@ -1,15 +1,26 @@
+/* 
+
+  Master configuration file for the TypeScript compiler (tsc). 
+  It tells TypeScript which files to check, how strictly to enforce 
+  rules, and how to transform your modern code into JavaScript that the 
+  browser or Node.js can actually run.
+
+*/
+
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    "rootDir": "./src/frontend/typescript",
-    "outDir": "./src/frontend/static/comp_js",
+    "rootDir": "./src/frontend/typescript", // your TypeScript source
+    "outDir": "./src/frontend/static/comp_js",  // compiled JS goes here
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "esnext",
     "target": "esnext",
-    // "types": [],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["vitest/globals", "jquery"],
+    
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -25,22 +36,33 @@
     // "exactOptionalPropertyTypes": true,
 
     // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
+    "forceConsistentCasingInFileNames": true,
 
     // Recommended Options
+    // The strict flag automatically turns on `noImplicitAny` 
     "strict": true,
-    "jsx": "react-jsx",
+    "jsx": "react-jsx", // Ready for React
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+
+    // Bundler Options
+    "moduleResolution": "bundler",
+
+    // Fixes compatibility between CommonJS and ES Modules by creating namespace-to-default helpers
+    "esModuleInterop": true,
+
   },
   "include": ["src/frontend/typescript/**/*"],
+  // TODO: Add ViTest folder into "exclude" as well when the time comes
   "exclude": ["node_modules"]
 }

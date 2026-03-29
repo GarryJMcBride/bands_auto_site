@@ -44,6 +44,13 @@ TODO: Implement Architecture over view for Form submission
 | `uv` | Package Manager
 | `uvicorn` | Server gateway for asyncronous Framework (FastAPI)
 | `FastAPI` | Asyncronous Framework
+| <br>
+| **Testing**
+| `pytest` | Python Language Testing
+| `vitest` | JavaScript Language Testing
+
+
+
 
 ---
 

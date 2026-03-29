@@ -108,6 +108,12 @@ npm run build
 
 <br>
 
+### TypeScript
+
+---
+
+<br>
+
 ### Uvicorn - Server gateway
 
 ```bash

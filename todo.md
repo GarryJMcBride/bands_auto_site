@@ -17,9 +17,11 @@
 --------
 Typescript installation TODO
 
-Get commands for running compiler to js seperatly
-Get it to compile to the right folders
-Move JQoery to a jquery folder and use js as the target for typescript compiler
-Get Uvicorn ro run the typescript compiler when the fastapi server is launched
-Find out more about what part Vite has to play
-Summarise Claude pages for Development_jounral.md
+- Get commands for running compiler to js seperatly
+- Get it to compile to the right folders
+- Move JQuery to a jquery folder and use js as the target for typescript compiler
+- Get Uvicorn ro run the typescript compiler when the fastapi server is launched
+- Find out more about what part Vite has to play
+- Summarise Claude pages for Development_jounral.md
+    - Vite and the bundler regarding typescript - no need to hard code into html
+    - What to do about static JQuery files and if they need updates?
