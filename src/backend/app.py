@@ -15,18 +15,15 @@ app = FastAPI(
 
 
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
-# | Mount static files so the browser can download/render them
+# Mount static files so FASTAPI can serve them to the browser
 # ---------------
-# | File on disk                        | URL in browser          |
-# | ----------------------------------- | ----------------------- |
-# | `src/frontend/static/js/app.js`     | `/static/js/app.js`     |
-# | `src/frontend/static/css/style.css` | `/static/css/style.css` |
+# Static assets (HTML, CSS, jQuery) and compiled TypeScript output are mounted separately
 app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
-app.mount("/static", StaticFiles(directory="src/frontend/static/comp_js"), name="static")
+app.mount("/dist", StaticFiles(directory="src/frontend/dist"), name="dist")
 
 
 # Templates for rendering HTML templates
-# Instead of just serving it as a raw file like .JS or .CSS
+# Instead of just serving it as a raw file like `.JS` or `.CSS`
 # HTML is Returned by FastAPI via endpoints
 templates = Jinja2Templates(directory="src/frontend/templates/")
 

@@ -12,7 +12,7 @@
   "compilerOptions": {
     // File Layout
     "rootDir": "./src/frontend/typescript", // your TypeScript source
-    "outDir": "./src/frontend/static/comp_js",  // compiled JS goes here
+    "outDir": "./src/frontend/dist",  // compiled JS goes here
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
