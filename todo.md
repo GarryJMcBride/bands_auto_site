@@ -25,6 +25,23 @@ Typescript installation TODO
     - Vite and the bundler regarding typescript - no need to hard code into html
     - What to do about static JQuery files and if they need updates?
 
+-------------
+Typescript Paths TODO
+* Decide on TypeScript import strategy: use `baseUrl` and optional path aliases instead of deep relative paths
+* Update `tsconfig.json`:
+
+  * Set `"baseUrl": "./src"`
+  * Add optional `"paths": { "@/*": ["*"] }` for clean absolute imports
+* Refactor all TypeScript imports to use baseUrl/alias or simple relative paths
+* Check that compiled output in `dist/` resolves correctly for Node/FastAPI
+* Introduce a bundler (esbuild or webpack) to handle:
+
+  * Path alias resolution
+  * Outputting clean browser-ready files to `dist/`
+* Ensure HTML references (`<script>` / `<link>`) point to the correct bundled/dist files
+* Test end-to-end: TypeScript build → FastAPI → browser to confirm no broken imports or missing assets
+
+
 
 
 

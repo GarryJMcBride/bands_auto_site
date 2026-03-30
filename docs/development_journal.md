@@ -234,7 +234,7 @@ Keep it simple and layered:
 7. **Protect All endpoints from potential abuse** - You don’t need full login/auth if the form is public, but don’t leave it wide open to bots.
 In short: **never trust user input**, validate, sanitize, and isolate.
 
-### Data Validation - Two Sides 
+### Data Validation - client-side (frontend) and server-side (backend)
 
 Why Doing Both is Robust
 Better UX + Security: Frontend validation improves usability; backend validation ensures security and integrity.
