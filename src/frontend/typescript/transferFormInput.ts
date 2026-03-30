@@ -2,7 +2,7 @@ import DOMPurify from "dompurify";
 
 import type { QuoteFormData } from "./types";
 import type { ValidationResult } from "./types";
-import error from "jquery";
+import { VALID_SERVICES } from "./classes";
 
 // ---- Sanitisation --------------------------------------------------
 
@@ -28,17 +28,11 @@ function sanitiseString(value: string): string {
 
 // ---- Validation --------------------------------------------------
 
-const VALID_SERVICES = [
-  "Website Development",
-  "Graphic Designing",
-  "Digital Marketing",
-  "App Development",
-] as const;
-
 type ValidService = (typeof VALID_SERVICES)[number];
 
 /**
  * Checks if the provided service is a valid service.
+ * VALID_SERVICES is defined in classes.ts and contains the list of valid options.
  * 
  * @param service - The service to validate.
  * @returns True if the service is valid, false otherwise.
