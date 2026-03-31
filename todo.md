@@ -1,3 +1,5 @@
+## Generic
+
 - Look at how SCSS is set up
 - Implement TypeScript - Use and explorer Vite for the bundle
 - Create JavaScript API Call for form data to backend
@@ -13,8 +15,14 @@
     - They are fine just now due to them not being ready high priorty and they work
 
 
---------
-Typescript installation TODO
+
+
+
+
+
+
+
+## Typescript installation TODO
 
 - Get commands for running compiler to js seperatly
 - Get it to compile to the right folders
@@ -25,8 +33,9 @@ Typescript installation TODO
     - Vite and the bundler regarding typescript - no need to hard code into html
     - What to do about static JQuery files and if they need updates?
 
--------------
-Typescript Paths TODO
+
+
+### Typescript Paths TODO
 * Decide on TypeScript import strategy: use `baseUrl` and optional path aliases instead of deep relative paths
 * Update `tsconfig.json`:
 
@@ -45,8 +54,10 @@ Typescript Paths TODO
 
 
 
-------------
-Deployment on VPS (Configuration to have multiple sites running on server)
+
+
+
+## Deployment on VPS (Configuration to have multiple sites running on server)
 
 - Separate FastAPI apps per site
 - Check were all folders are mounted to by FastAPI?
@@ -55,3 +66,20 @@ Deployment on VPS (Configuration to have multiple sites running on server)
 - Can/Should multiple sites share the same database?
 - Can/Should multiple sites share the same port (443)?
 - Consider using Core FASTAPI set up that can update mutliple sites when infrastructure improves of code 
+
+
+
+
+
+
+
+
+## Client side validation - Frontend JavaScript
+
+- Add max lengths to forms 
+- What is Ajax 
+- Should we have a call to the endpoint if the browser doesn’t support JavaScript ?
+- Delete data on client side after passed 
+- Error handling: the user should be told it’s been successful.
+- Read custom script. Js
+- Find out why that form is inheriting the validation 
