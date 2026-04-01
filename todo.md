@@ -1,6 +1,5 @@
 ## Generic
 
-- Look at how SCSS is set up
 - Implement TypeScript - Use and explorer Vite for the bundle
 - Create JavaScript API Call for form data to backend
 - Consider replacing JQuery? Its rather static and we will be using JavaScript for backend functionality like API Requests to python
@@ -13,6 +12,22 @@
 - Move `/images` on T-X into Static as its in `.gitignore` and on T-X its one folder above
 - Remove CSS bloat - Rename classes to new names for their purpose
     - They are fine just now due to them not being ready high priorty and they work
+
+
+
+
+
+
+
+-----------
+CCS and UI
+- Understand how the CSS is implemented... the variables and the settings for different styles pages from the template
+- Remove CSS bloat - Rename classes to new names for their purpose
+    - They are fine just now due to them not being ready high priorty and they work
+- Look at how SCSS is set up
+- Understand the use of Jquery for the UI and others 
+- Understand Bootstrap implementation
+- Understand the fades and transitions (things that move)
 
 
 
