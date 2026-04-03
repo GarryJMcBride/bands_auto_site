@@ -54,14 +54,25 @@ def read_homepage(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-# Pydantic Data Model
-# class FormData(BaseModel):
-#     name: str
-#     email: str
-#     message: str
+###################################
+###################################
+###################################
+###################################
+###################################
 
-# # Form Data Endpoint
-# @app.post("/submit")
-# def submit_form(form: FormData): # Todo add return type
+# Test endpoint for quote submission - to be replaced with actual quote handling logic
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-#     return {"status": "ok"}
+
+class QuoteSubmission(BaseModel):
+    username: str
+    email: str
+    phone: str
+    service: str
+
+
+@app.post("/api/quote")
+async def submit_quote(payload: QuoteSubmission):
+    print(payload)
+    return {"message": "Received", "data": payload}
