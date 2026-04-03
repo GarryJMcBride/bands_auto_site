@@ -19,6 +19,29 @@
 
 
 
+-------------------
+Feature: Get vehicle info from REGI
+- Brian wants a contact form that will sent him an email with the clients info as well as the vehicles info
+- The Customer will only add their regi as asking for all of the other information is too much *See email images from Brian for example of what he recieves
+- We need to use an API on the server to gather the information about the car and then send it to Brians email address
+- The information will need to be secure as its details about the car
+    - Anyone can type a regi into a website though and generate the information
+*See emails template in `Takmadoon/B&S Autos/Template from Book my Mechanic`
+*See chatgpt chat B&S Autos - `Initial look at new features`
+
+
+
+
+-------------------
+Feature: Allow testimonials to be added by user
+- Without adding a backend that allows users to log in (too large of a feature)
+    - People can add reviews to Brians site and they are stored in a database, either accetped or rejected
+- Need to consider if this website will scrape or request the reviews from `book my garage` to then be mirrored on this site
+*See chatgpt chat B&S Autos - `Initial look at new features`
+
+
+
+
 
 
 -----------
