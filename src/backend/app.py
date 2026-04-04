@@ -61,9 +61,6 @@ def read_homepage(request: Request) -> HTMLResponse:
 ###################################
 
 # Test endpoint for quote submission - to be replaced with actual quote handling logic
-from fastapi import FastAPI
-from pydantic import BaseModel
-
 
 class QuoteSubmission(BaseModel):
     username: str
