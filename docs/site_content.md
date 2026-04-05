@@ -73,12 +73,53 @@ We carry out a wide range of repairs, from worn brakes to faulty components, usi
 
 
 
+## We are also on Book My Garage
 
-How it works
-1. Get in touch
-2. Arrange a time and Date
-3. Lets have a look at your vehicle
-4. Stay in touch
+Heading: We are also on 'Book My Garage'
+Button: Go There!
+
+
+## FAQs
+
+Do you come to my home or workplace?
+Yes, we carry out work at your home, workplace, or any convenient location, as long as it’s safe and suitable for the job.
+
+What types of repairs can you do on-site?
+We handle most jobs including diagnostics, servicing, brakes, batteries, and general repairs. If a job requires a garage setup, we’ll advise you honestly.
+
+How do I book an appointment?
+You can contact us by phone, message, or through our website to arrange a time that suits you.
+
+Do you provide diagnostics before repairs?
+Yes, we always diagnose faults properly before carrying out repairs, so you know exactly what the issue is.
+
+Are your parts and work guaranteed?
+Yes, we use quality parts and stand by our work. Warranty details can be provided depending on the job.
+
+What areas do you cover?
+We cover local and surrounding areas. Get in touch and we’ll confirm if we can reach you.
+
+Can you service my vehicle at my location?
+Yes, routine servicing can be carried out wherever your vehicle is parked, provided there is enough space.
+
+What if my car won’t start?
+We can come out to diagnose the issue, whether it’s a battery, starter, or another fault, and aim to get you back on the road.
+
+Do I need to provide any tools or equipment?
+No, we bring everything required to carry out the work.
+
+How do I pay?
+We offer convenient payment options—details can be discussed when booking or after the work is completed.
+
+
+
+
+
+
+
+
+
+------------------
 
 
 Other Platforms
