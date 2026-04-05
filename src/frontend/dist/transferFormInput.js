@@ -19,6 +19,9 @@ function sanitiseString(value) {
     return cleaned
         .trim()
         .replace(/\$\{.*?\}/g, ""); // remove template patterns
+    // TODO: Find out what GPTs issue with the below lines was against finding unwanted characters
+    // .replace(/\$\{.*?\}/g, "")     // remove template literal injections
+    // .replace(/[<>]/g, "");         // belt-and-braces: strip angle brackets
 }
 /**
  * Checks if the provided service is a valid service.

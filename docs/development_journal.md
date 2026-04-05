@@ -373,6 +373,7 @@ TODO: Implement Architecture over view for Form submission
 | `JQuery-UI`    | jQuery UI Widget - https://jqueryui.com/
 | `TS/JS`    | Web Languages - TypeScript compiles to JavaScript
 | `Bootstrap`    | Responsive Design - Automated Screen size adjustments
+| `Right to Left`    | Responsive Design - Mirrors Website for languages that read from right to left
 | <br>
 | **BACKEND**
 | `python`   | Python Language
@@ -387,24 +388,30 @@ TODO: Implement Architecture over view for Form submission
 | **Note Worthly Scripts/Settings**
 | **JQuery** - Used as static files for UI Interaction and Browser support
 | `respond.js` | A CSS media query polyfill for old IE browsers, it uses XHR internally just to read your CSS files and parse media queries. 
-| `jquery.js` | Core jQuery |
-| `popper.min.js` | Tooltip/dropdown positioning (Bootstrap dependency) |
-| `bootstrap.min.js` | Bootstrap UI framework |
-| `TweenMax.js` | GSAP animations |
-| `jquery-ui.js` | Legacy UI widgets |
-| `jquery.fancybox.js` | Lightbox/modal images |
-| `owl.js` | Carousel/slider |
-| `mixitup.js` | Filter/sort animations |
-| `knob.js` | Circular dial UI elements |
-| `validate.js` | Client-side form validation only |
-| `appear.js` | Trigger events when elements scroll into view |
-| `wow.js` | Scroll-triggered CSS animations |
-| `jarallax.min.js` | Parallax scrolling |
-| `jquery.easing.min.js` | Animation easing functions |
-| `custom-script.js` | Template's own glue code |
+| `jquery.js` | Core jQuery
+| `popper.min.js` | Tooltip/dropdown positioning (Bootstrap dependency)
+| `bootstrap.min.js` | Bootstrap UI framework
+| `TweenMax.js` | GSAP animations
+| `jquery-ui.js` | Legacy UI widgets
+| `jquery.fancybox.js` | Lightbox/modal images
+| `owl.js` | Carousel/slider
+| `mixitup.js` | Filter/sort animations
+| `knob.js` | Circular dial UI elements
+| `validate.js` | Client-side form validation only
+| `appear.js` | Trigger events when elements scroll into view
+| `wow.js` | Scroll-triggered CSS animations
+| `jarallax.min.js` | Parallax scrolling
+| `jquery.easing.min.js` | Animation easing functions
+| `custom-script.js` | Template's own glue code
 | <br>
 | **TypeScript Configurations**
-| `tsconfig.json` | Master configuration for TypeScript |
+| `tsconfig.json` | Master configuration for TypeScript
+| <br>
+| **CSS**
+| `rtl.scss` | Mirror your website's layout for languages that read from right to left
+| `src/frontend/static/css/colours` | Abilit to change the theme colour from an override `:root`
+| `src/frontend/static/css/variables` | Abilit to change the theme variables from an override `:root`
+
 
 
 

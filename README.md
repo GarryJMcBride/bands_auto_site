@@ -110,6 +110,21 @@ npm run build
 
 <br>
 
+### CSS/SCSS
+
+```bash
+# Compile Single File - REPO Local
+npx sass input.scss output.css
+
+# Watch Mode - REPO Local
+npx sass --watch input.scss output.css    # Local single file
+npx sass --watch src/:dist/               # Local directory
+```
+
+---
+
+<br>
+
 ### TypeScript
 
 ```bash

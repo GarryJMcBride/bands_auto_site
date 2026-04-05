@@ -9,7 +9,7 @@
 * [ ] Currently the linkes from the HTML to JS and CSS files are `../../` as its local
     * [ ] Since we are using FASTAPI, They need to be mounted in `app.py` - need to fix all paths to work when FASTAPI takes control. *See chatGPT `relative paths in fastapi` and `understanding the browser 1 and 2`
     * [ ] Get process together for firing up server for development as using VS Code Live server is ok for jumping back REPOS, but not whenever we start fully integrating with FASTAPI
-* [ ] Create `main()` for uvicorn in a `main()`
+* [x] Create `main()` for uvicorn in a `main()`
 * [ ] Install ruff and pylance
 * [ ] Move `/images` on T-X into Static as its in `.gitignore` and on T-X its one folder above
 * [ ] Remove CSS bloat - Rename classes to new names for their purpose
@@ -49,6 +49,7 @@ CCS and UI
 * [ ] Understand how the CSS is implemented... the variables and the settings for different styles pages from the template
 * [ ] Remove CSS bloat - Rename classes to new names for their purpose
     * [ ] They are fine just now due to them not being ready high priorty and they work
+    * [ ] Remove Templates feature for overriding colours in the folders and files `src/frontend/static/css/colours` and `src/frontend/static/cssvariables`
 * [ ] Look at how SCSS is set up
 * [ ] Understand the use of Jquery for the UI and others 
 * [ ] Understand Bootstrap implementation
