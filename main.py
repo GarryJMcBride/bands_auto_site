@@ -30,7 +30,8 @@ def main(port: int = TESTING_PORT) -> None:
         "src.backend.app:app",  # "filename:variable_name" — points Uvicorn to app.py
         host="127.0.0.1",  # localhost only for local dev
         port=port,  # desired port
-        reload=True,  # auto-reload on code changes (development only)
+        # reload=True,  # auto-reload on code changes (development only)
+        reload=False,
         workers=workers,
     )
 

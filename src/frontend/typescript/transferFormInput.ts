@@ -75,10 +75,17 @@ function validateFormData(data: QuoteFormData): ValidationResult {
   }
 
    // Phone: digits, spaces, +, (), - only; 7–15 digits
-   if (!data.phone) {
+  if (!data.phone) {
     errors.phone = "Phone number is required.";
   } else if (!/^\+?[\d\s\-()]{7,20}$/.test(data.phone)) {
     errors.phone = "Please enter a valid phone number.";
+  }
+
+  // Vehicle Registration: letters, digits, spaces, (), - only; 2–20 characters
+  if (!data.registration) {
+    errors.registration = "Vehicle registration is required.";
+  } else if (!/^[a-zA-Z0-9\s\-()]{2,20}$/.test(data.registration)) {
+    errors.registration = "Please enter a valid vehicle registration.";
   }
 
   // Service: must be one of the predefined options
@@ -112,6 +119,7 @@ function handleQuoteFormSubmit(event: SubmitEvent): void {
     username: (form.elements.namedItem("username") as HTMLInputElement).value,
     email: (form.elements.namedItem("email") as HTMLInputElement).value,
     phone: (form.elements.namedItem("phone") as HTMLInputElement).value,
+    registration: (form.elements.namedItem("registration") as HTMLInputElement).value,
     service: (form.elements.namedItem("service") as HTMLSelectElement).value,
   }
 
@@ -120,6 +128,7 @@ function handleQuoteFormSubmit(event: SubmitEvent): void {
     username: sanitiseString(rawData.username),
     email: sanitiseString(rawData.email),
     phone: sanitiseString(rawData.phone),
+    registration: sanitiseString(rawData.registration),
     service: sanitiseString(rawData.service),
   };
 

@@ -8,6 +8,7 @@ export interface QuoteFormData {
     username: string;
     email: string;
     phone: string;
+    registration: string;
     service: string;
 }
 

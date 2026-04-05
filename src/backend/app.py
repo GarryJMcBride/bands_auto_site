@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import base64
 from starlette.templating import Jinja2Templates
 
-
 # Initialize FastAPI application
 app = FastAPI(
     title="B&S Auto",
@@ -13,6 +12,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Routers
+app.include_router(router)
 
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
 # Mount static files so FASTAPI can serve them to the browser
@@ -62,14 +63,33 @@ def read_homepage(request: Request) -> HTMLResponse:
 
 # Test endpoint for quote submission - to be replaced with actual quote handling logic
 
-class QuoteSubmission(BaseModel):
-    username: str
-    email: str
-    phone: str
-    service: str
+
+# class QuoteSubmission(BaseModel):
+#     username: str
+#     email: str
+#     phone: str
+#     registration: str
+#     service: str
 
 
-@app.post("/api/quote")
-async def submit_quote(payload: QuoteSubmission):
-    print(payload)
-    return {"message": "Received", "data": payload}
+# @app.post("/api/quote")
+# async def submit_quote(payload: QuoteSubmission):
+#     logger.info(f"Quote submitted: {payload}")
+#     return {"message": "Received", "data": payload}
+
+
+# fake_db = []
+
+
+# @app.post("/api/quote")
+# def submit(data: dict):
+#     fake_db.append(data)
+#     return {"status": "ok"}
+
+
+# @app.get("/debug/db")
+# def get_db():
+#     return fake_db
+
+
+# http://127.0.0.1:8000/debug/db

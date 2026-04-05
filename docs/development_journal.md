@@ -234,6 +234,8 @@ Keep it simple and layered:
 7. **Protect All endpoints from potential abuse** - You don’t need full login/auth if the form is public, but don’t leave it wide open to bots.
 In short: **never trust user input**, validate, sanitize, and isolate.
 
+TODO: Browser Console - Explore browser console and check you are not leaving any breadcrumbs or access for hackers via data or ways in
+
 ### Data Validation - client-side (frontend) and server-side (backend)
 
 Why Doing Both is Robust
