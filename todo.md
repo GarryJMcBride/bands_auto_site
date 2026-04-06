@@ -1,126 +1,317 @@
-## Generic
+    This file should be merged with Architecture and documentation
+    There will be some things done that have not been covered in here as they were done along the way**
+    Reference and capture.
 
-* [ ] Add these todos to the wnd - they will go towards the how to design a website checklist or process
+# Master Development TODO (Structured)
 
-* [ ] Implement TypeScript - Use and explorer Vite for the bundle
-* [ ] Create JavaScript API Call for form data to backend
-* [ ] Consider replacing JQuery? Its rather static and we will be using JavaScript for backend functionality like API Requests to python
-    * [ ] or just have static JS/JQuery files and then have TS/JS seperate for backend logic
-* [ ] Currently the linkes from the HTML to JS and CSS files are `../../` as its local
-    * [ ] Since we are using FASTAPI, They need to be mounted in `app.py` - need to fix all paths to work when FASTAPI takes control. *See chatGPT `relative paths in fastapi` and `understanding the browser 1 and 2`
-    * [ ] Get process together for firing up server for development as using VS Code Live server is ok for jumping back REPOS, but not whenever we start fully integrating with FASTAPI
-* [x] Create `main()` for uvicorn in a `main()`
-* [ ] Install ruff and pylance
-* [ ] Move `/images` on T-X into Static as its in `.gitignore` and on T-X its one folder above
-* [ ] Remove CSS bloat - Rename classes to new names for their purpose
-    * [ ] They are fine just now due to them not being ready high priorty and they work
+---
 
+## 1. General Architecture & Setup
 
+### Project Organisation
 
+* [ ] Add these todos into **WND (Web Notes/Docs)**
+  → Turn this into a reusable **“Website Development Process Checklist”**
 
+### FastAPI Integration
 
--------------------
-Feature: Get vehicle info from REGI
-- Brian wants a contact form that will sent him an email with the clients info as well as the vehicles info
-- The Customer will only add their regi as asking for all of the other information is too much *See email images from Brian for example of what he recieves
-- We need to use an API on the server to gather the information about the car and then send it to Brians email address
-- The information will need to be secure as its details about the car
-    - Anyone can type a regi into a website though and generate the information
-*See emails template in `Takmadoon/B&S Autos/Template from Book my Mechanic`
-*See chatgpt chat B&S Autos - `Initial look at new features`
+* [ ] Fix static file paths for FastAPI:
 
+  * Replace all `../../` relative paths in HTML
+  * Mount static directories correctly in `app.py`
+  * Ensure CSS, JS, and images resolve properly when served via FastAPI
+    → Reference: *“relative paths in fastapi” + your browser notes*
 
+* [ ] Define a **standard development workflow**:
 
+  * Decide how to run FastAPI during development (instead of VS Code Live Server)
+  * Ensure frontend + backend work together consistently
 
--------------------
-Feature: Allow testimonials to be added by user
-- Without adding a backend that allows users to log in (too large of a feature)
-    - People can add reviews to Brians site and they are stored in a database, either accetped or rejected
-- Need to consider if this website will scrape or request the reviews from `book my garage` to then be mirrored on this site
-*See chatgpt chat B&S Autos - `Initial look at new features`
+### Python Tooling
 
+* [x] Create a `main()` entry point for running Uvicorn
+* [ ] Install and configure:
 
+  * `ruff` (linting)
+  * `pylance` (type checking / IntelliSense)
 
+### Static Assets
 
+* [ ] Move `/images` into FastAPI `static/` directory
 
+  * Ensure it is tracked correctly (currently ignored / misplaced)
+  * Fix any broken references after moving
 
------------
-CCS and UI
-* [ ] Understand how the CSS is implemented... the variables and the settings for different styles pages from the template
-* [ ] Remove CSS bloat - Rename classes to new names for their purpose
-    * [ ] They are fine just now due to them not being ready high priorty and they work
-    * [ ] Remove Templates feature for overriding colours in the folders and files `src/frontend/static/css/colours` and `src/frontend/static/cssvariables`
-* [ ] Look at how SCSS is set up
-* [ ] Understand the use of Jquery for the UI and others 
-* [ ] Understand Bootstrap implementation
-* [ ] Understand the fades and transitions (things that move)
+---
 
+## 2. Frontend Architecture (JavaScript / TypeScript)
 
+### JavaScript & API Integration
 
+* [ ] Implement JavaScript API call:
 
+  * Send form data → FastAPI backend
+  * Handle response (success/failure feedback)
 
+### jQuery Evaluation
 
+* [ ] Decide strategy for jQuery usage:
 
+  * Option A: Keep jQuery for UI only (static behaviour)
+  * Option B: Replace with modern JavaScript
+* [ ] If keeping:
 
+  * Separate **UI scripts (jQuery)** from **logic scripts (TS/JS API calls)**
 
-## Typescript installation TODO
+---
 
-- Get commands for running compiler to js seperatly
-- Get it to compile to the right folders
-- Move JQuery to a jquery folder and use js as the target for typescript compiler
-- Get Uvicorn ro run the typescript compiler when the fastapi server is launched
-- Find out more about what part Vite has to play
-- Summarise Claude pages for Development_jounral.md
-    - Vite and the bundler regarding typescript - no need to hard code into html
-    - What to do about static JQuery files and if they need updates?
+## 3. TypeScript Setup & Build Pipeline
 
+### Initial Setup
 
+* [ ] Install and configure TypeScript
+* [ ] Define compilation workflow:
 
-### Typescript Paths TODO
-* Decide on TypeScript import strategy: use `baseUrl` and optional path aliases instead of deep relative paths
-* Update `tsconfig.json`:
+  * Run compiler separately OR integrate into dev server
+  * Output compiled JS into correct folders
 
-  * Set `"baseUrl": "./src"`
-  * Add optional `"paths": { "@/*": ["*"] }` for clean absolute imports
-* Refactor all TypeScript imports to use baseUrl/alias or simple relative paths
-* Check that compiled output in `dist/` resolves correctly for Node/FastAPI
-* Introduce a bundler (esbuild or webpack) to handle:
+### Project Structure
 
-  * Path alias resolution
-  * Outputting clean browser-ready files to `dist/`
-* Ensure HTML references (`<script>` / `<link>`) point to the correct bundled/dist files
-* Test end-to-end: TypeScript build → FastAPI → browser to confirm no broken imports or missing assets
+* [ ] Organise scripts:
 
+  * Move jQuery → dedicated `/jquery` folder
+  * Use `/js` or `/dist` as TypeScript output target
 
+### FastAPI Integration
 
+* [ ] Configure Uvicorn/dev workflow to:
 
+  * Automatically compile TypeScript when server starts (or via watcher)
 
+### Vite / Bundler Understanding
 
+* [ ] Investigate role of **Vite**:
 
+  * How it handles bundling, imports, and dev server
+  * Whether it replaces manual TypeScript compilation
+* [ ] Summarise findings into `Development_journal.md`:
 
-## Deployment on VPS (Configuration to have multiple sites running on server)
+  * TS + bundler workflow
+  * Whether HTML should directly reference scripts or bundled output
+  * Strategy for handling legacy jQuery files
 
-- Separate FastAPI apps per site
-- Check were all folders are mounted to by FastAPI?
-    - Will different sites mix these files if they all mount?
-    - Do FastAPI examples state to mount to static/ because they dont know context that another site is running on the same server?
-- Can/Should multiple sites share the same database?
-- Can/Should multiple sites share the same port (443)?
-- Consider using Core FASTAPI set up that can update mutliple sites when infrastructure improves of code 
+---
 
+## 4. TypeScript Paths & Imports
 
+* [ ] Define import strategy:
 
+  * Avoid deep relative paths (`../../../`)
+  * Prefer `baseUrl` and aliases
 
+* [ ] Update `tsconfig.json`:
 
+  * `"baseUrl": "./src"`
+  * Optional alias:
 
+    ```json
+    "paths": { "@/*": ["*"] }
+    ```
 
+* [ ] Refactor imports across project:
 
-## Client side validation - Frontend JavaScript
+  * Use cleaner absolute or simplified relative paths
 
-- Add max lengths to forms 
-- What is Ajax 
-- Should we have a call to the endpoint if the browser doesn’t support JavaScript ?
-- Delete data on client side after passed 
-- Error handling: the user should be told it’s been successful.
-- Read custom script. Js
-- Find out why that form is inheriting the validation 
+* [ ] Ensure build output works:
+
+  * Compiled files resolve correctly in `/dist`
+  * Compatible with FastAPI static serving
+
+* [ ] Introduce bundler (if needed):
+
+  * Handle alias resolution
+  * Produce browser-ready assets
+
+* [ ] Validate full pipeline:
+
+  * TypeScript → Build → FastAPI → Browser
+  * Confirm no broken imports or missing files
+
+---
+
+## 5. CSS, UI & Styling
+
+### Understanding Current Setup
+
+* [ ] Learn how CSS is structured:
+
+  * Variables
+  * Theme system
+  * Template overrides
+
+* [ ] Investigate:
+
+  * SCSS usage
+  * Bootstrap integration
+  * jQuery-driven UI behaviour
+  * Animations (fades, transitions)
+
+### Cleanup (Low Priority)
+
+* [ ] Reduce CSS bloat:
+
+  * Rename unclear class names to meaningful ones
+  * Remove unused styles
+
+* [ ] Remove template override system:
+
+  * Delete:
+
+    * `css/colours`
+    * `cssvariables`
+  * Simplify styling approach
+
+---
+
+## 6. Feature: Vehicle Info from Registration
+
+### Goal
+
+Allow users to submit only a registration number and automatically retrieve vehicle details.
+
+### Tasks
+
+* [ ] Build form:
+
+  * Input: vehicle registration only
+  * Keep UX minimal (per client request)
+
+* [ ] Backend integration:
+
+  * Call external API to fetch vehicle data
+  * Process and validate response
+
+* [ ] Email system:
+
+  * Send collected data to client (Brian)
+  * Include:
+
+    * User details
+    * Vehicle details
+
+* [ ] Security considerations:
+
+  * Protect API keys and backend endpoints
+  * Ensure safe handling of vehicle data
+    *(Note: Reg lookups are public, but API usage must still be secured)*
+
+* [ ] Match email format:
+
+  * Use template from:
+    `Takmadoon/B&S Autos/Template from Book my Mechanic`
+
+---
+
+## 7. Feature: User Testimonials
+
+### Basic Version (No Accounts)
+
+* [ ] Create submission system:
+
+  * Users submit reviews
+  * Stored in database
+
+* [ ] Admin moderation:
+
+  * Accept or reject reviews before display
+
+### External Integration विचार
+
+* [ ] Investigate pulling reviews from external platforms:
+
+  * Example: “Book My Garage”
+  * Options:
+
+    * API (preferred)
+    * Scraping (fallback, less reliable)
+
+---
+
+## 8. Deployment (VPS & Multi-Site Setup)
+
+### Architecture Decisions
+
+* [ ] Decide structure:
+
+  * Separate FastAPI app per site
+
+* [ ] Static file handling:
+
+  * Ensure sites don’t conflict when mounting `/static`
+  * Confirm isolation between projects
+
+### Infrastructure Questions
+
+* [ ] Database strategy:
+
+  * Shared vs separate databases per site
+
+* [ ] Networking:
+
+  * Multiple sites on port 443 (via reverse proxy like Nginx)
+
+* [ ] Future scalability:
+
+  * Create a **core FastAPI base setup**
+  * Allow reuse across multiple client sites
+
+### .bashrc file
+
+* [ ] Add Alias and Short cuts into this bash file
+
+---
+
+## 9. Client-Side Validation (Frontend)
+
+### Form Validation
+
+* [ ] Add constraints:
+
+  * Max lengths
+  * Required fields
+
+* [ ] Improve UX:
+
+  * Show success/failure messages clearly
+  * Prevent duplicate submissions
+
+### Behaviour & Edge Cases
+
+* [ ] Understand **AJAX** (async requests without reload)
+
+* [ ] Decide fallback:
+
+  * What happens if JavaScript is disabled?
+
+* [ ] Data handling:
+
+  * Clear form after submission
+  * Avoid retaining sensitive data client-side
+
+* [ ] Debug validation issues:
+
+  * Investigate why form is inheriting validation rules unexpectedly
+  * Review existing custom JS scripts
+
+---
+
+## 10. Security
+* [ ] Try to Penetrate Site with Scripts and other methods
+* [ ] Scan Browser console for any passwords or risky data exposure
+* [ ] Check out OWASP or other security methods defined by industry professionals
+* [ ] Use the following:
+    * Tokens
+    * Sessions
+    * API keys
+    * Certs for HTTP and HTTPS for APIs
+    * FastAPI Lifespan

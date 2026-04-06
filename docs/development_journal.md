@@ -263,6 +263,35 @@ Think of it like airport security — the ticket check at the entrance (frontend
 **Delete Data from frontend once purpose served**
 After receiving a successful response from your backend, explicitly reset the form with form.reset() and clear any variables holding the submitted values from memory. Never assume the browser handles this for you. The data has served its purpose the moment FastAPI receives it — clear it immediately and treat lingering form data as a liability.
 
+#### Data Validation and Security - Relationship Between the Frontend and Backend: TODO: Should help out with SOWAW task for understanding the browser
+
+**The Backend does not, and should not trust the Frontend, Security lives in FastAPI, not the browser.**
+
+- How do hackers or anyone web dev see your api endpoints in the server?
+
+Frontend (JS, fetch, forms) is just a convenience layer. the backend is publicly reachable if it’s on the internet. 
+- Looking at Network tab in browser dev tools (while JS is ON once)
+- Viewing your frontend source code
+- Guessing common routes (`/api/login`, `/submit`, `/users`)
+- Using tools like:
+    - curl
+    - Postman
+    - Burp Suite
+- Crawling/scanning your site automatically
+
+Turning off JavaScript doesn’t protect you. API must assume anyone can hit it directly.
+
+In DevTools:
+- Network tab > shows every request (URLs, payloads, headers)
+- Console > shows JS logs (not as useful for endpoints)
+- Sources > your JS code (can reveal endpoints)
+
+- How can someone send malicious requests?
+
+Because HTTP is open. Instead of your frontend `fetch("/api/contact"` and sending JSON, an attacher could `curl` inside using `https://yoursite.com/api/contact` and push JSON data or other data that has a command like run a script or `"Content-Type: application/json"`. Thousands of these could be sent at one time, this is why we should use a rate limiter in Python.
+
+They’re not using your UI. They’re talking directly to FastAPI. Hackers do not waste time wiuth UIs.
+
 #### Data Validation and Security - Python
 #### Data Validation and Security - JavaScript
 
