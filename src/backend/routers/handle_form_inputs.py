@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/api")
+router = APIRouter(prefix="/api", tags=["quote"])
 
-@router.post("/quote")
+@router.get("/quote")
 async def submit_quote(payload: QuoteSubmission) -> dict:
