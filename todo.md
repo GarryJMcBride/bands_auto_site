@@ -202,6 +202,12 @@ Allow users to submit only a registration number and automatically retrieve vehi
 * [ ] Security considerations:
 
   * Protect API keys and backend endpoints
+    * Wrap API calls in clients
+    * Wrap API calls with certs, tokens or other
+    * Uvicorn defaults to 127.0.0.1 (localhost)
+    * Uvicorn defaults to 127.0.0.1 for security, but SSL requires a full https:// path because network requests
+      * Add full paths to localhost (127.0.0.1) for internal apis 
+      * Currently we just give uvicorn a port number and it knows where to look. SSL and security need full path
   * Ensure safe handling of vehicle data
     *(Note: Reg lookups are public, but API usage must still be secured)*
 
