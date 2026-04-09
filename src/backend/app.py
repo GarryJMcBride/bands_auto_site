@@ -6,6 +6,7 @@ template rendering, and the primary endpoints for the B&S Auto web application.
 The application serves the homepage."""
 
 import os
+from dotenv import load_dotenv
 
 from typing import AsyncGenerator
 import logging
@@ -14,9 +15,13 @@ import base64
 from contextlib import asynccontextmanager
 
 from starlette.templating import Jinja2Templates
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -27,13 +32,24 @@ import asyncpg
 from src.backend.routers import handle_form_inputs
 
 # Globals and Configurations
+load_dotenv()  # Load environment variables from .env file
+
 DATABASE_URL = os.getenv("DATABASE_URL")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(
+    ","
+)  # Comma-separated list of allowed origins for CORS
+
 db_pool = None
+
+# ---- Logger Config --------------------------------------------------
 
 # TODO: Move this to config.py and bring in
 # Logging setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ---- FastAPI Config --------------------------------------------------
+
 
 # FastAPI LifeSpan
 @asynccontextmanager
@@ -42,19 +58,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global db_pool
 
     # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
-    do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10))
+    do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
 
     logger.info("Database connection pool created")
 
     yield
     await do_pool.close()
-    
+
     logger.info("Database connection pool closed")
+
 
 # Rate Limiter for API endpoints - Security and traffic management
 # ---------------
 # Controls the number of requests to an API or server within a specific timeframe
-limiter = Limiter(key_func=get_remote_address, default_limits=["1/hour"])
+limiter = Limiter(key_func=get_remote_address, default_limits=["5/hour"])
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -72,10 +89,44 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Checkpoint (slowAPI Middleware vs HTTPRedirectMiddleware) 
-app.add_middleware()
-# Checkpoint (CORS Middleware) Setup Middlware
-app.add_middleware()
+# ---- Middleware & Security Config --------------------------------------------------
+
+# Middleware Setup - Security and CORS
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(
+    CORSMiddleware,  # CORS — only allow your own domain
+    allow_origins=ALLOWED_ORIGINS,  # whitelist of trusted frontends
+    allow_methods=["POST"],  # only POST requests are allowed cross-origin
+    allow_headers=["Content-Type"],  # only this header is permitted
+)
+
+
+# Custom middleware to add security headers to all responses
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Middleware to add security headers to all responses.
+
+    This middleware enhances security by adding headers that prevent MIME type sniffing,
+    clickjacking, and cross-site scripting (XSS) attacks.
+
+    Headers added:
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: DENY
+    - X-XSS-Protection: 1; mode=block
+    """
+
+    # Add security headers to all responses to enhance security against common web vulnerabilities
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+
+# ---- Endpoints, Routers and Static Files --------------------------------------------------
 
 # Routers
 app.include_router(handle_form_inputs.router)
@@ -89,6 +140,7 @@ app.mount("/dist", StaticFiles(directory="src/frontend/dist"), name="dist")
 
 # Templates for rendering HTML templates, no serving as raw file like `.JS` or `.CSS`
 templates = Jinja2Templates(directory="src/frontend/templates/")
+
 
 # HTML Calls these Endpoints - Page navigation handled by HTML
 # ---------------
