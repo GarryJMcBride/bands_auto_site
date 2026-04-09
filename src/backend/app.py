@@ -151,7 +151,7 @@ def read_homepage(request: Request) -> HTMLResponse:
 
     logging.info("Homepage accessed")
 
-    # TODO: Implement ninja for this
+    # TODO: Implement Jinja for this
     return templates.TemplateResponse("index.html", {"request": request})
 
 
