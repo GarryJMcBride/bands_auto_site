@@ -7,6 +7,9 @@ The application serves the homepage."""
 
 import os
 from dotenv import load_dotenv
+from enum import Enum
+import re
+import html
 
 from typing import AsyncGenerator
 import logging
@@ -153,6 +156,73 @@ def read_homepage(request: Request) -> HTMLResponse:
 
     # TODO: Implement Jinja for this
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+# ---- Enums and Data Models --------------------------------------------------
+
+class Service(str, Enum):
+    # TODO: Change to actual B&S Services
+    service    = "Website Development"
+    graphic   = "Graphic Designing"
+    marketing = "Digital Marketing"
+    app_dev   = "App Development"
+
+
+# ---- Sanitisation  --------------------------------------------------
+
+# Patterns that suggest injection attempts
+INJECTION_PATTERNS = [
+    r"<[^>]*>",                          # HTML/XML tags
+    r"javascript\s*:",                   # JS protocol
+    r"on\w+\s*=",                        # HTML event handlers (onclick= etc)
+    r"(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE)\s", # SQL keywords
+    r"(\$\{|\{\{)",                      # Template injection
+    r"(\.\.\/|\.\.\\)",                  # Path traversal
+    r"(eval|exec|system|passthru)\s*\(", # Command injection
+]
+
+def contains_injection(value: str) -> bool:
+    """Return True if the value contains any known injection pattern.
+    
+    Parameters
+    ----------
+    value: str
+        Patterns defined in the INJECTION_PATTERNS
+        
+    Returns
+    -------
+    bool : True or False
+        If True the pattern does contain injection pattern
+        If False the pattern does not contain injection patterns
+    """
+    for pattern in INJECTION_PATTERNS:
+        if re.search(pattern, value , re.IGNORECASE):
+            return True
+    return False
+
+def sanitise(value: str) -> str:
+    """Function to sanitise data if any characters that are not convential to simple
+    form input.
+    
+    - Strip leading/trailing whitespace
+    - Remove control characters
+    - Escape HTML entities
+    - Strip any remaining HTML tags
+
+    Parameters
+    ----------
+    value : str
+    
+    Returns
+    -------
+
+    """
+    value = value.strip()
+    value = re.sub(r"[\x00-\x1F\x7F]", "", value)  # remove control characters
+    value = html.escape(value)                       # encode & < > " '
+    value = re.sub(r"<[^>]*>", "", value)           # strip remaining tags
+    return value
+
 
 
 ###################################
