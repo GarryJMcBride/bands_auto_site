@@ -64,6 +64,11 @@ uv add <package_name>
 uv sync
 ```
 
+```bash
+# update uv lock
+uv lock --upgrade
+```
+
 TODO: Fix packages so that there is `core` and `dev`
 
 ```bash

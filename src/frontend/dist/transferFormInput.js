@@ -69,6 +69,13 @@ function validateFormData(data) {
     else if (!/^\+?[\d\s\-()]{7,20}$/.test(data.phone)) {
         errors.phone = "Please enter a valid phone number.";
     }
+    // Vehicle Registration: letters, digits, spaces, (), - only; 2–20 characters
+    if (!data.registration) {
+        errors.registration = "Vehicle registration is required.";
+    }
+    else if (!/^[a-zA-Z0-9\s\-()]{2,20}$/.test(data.registration)) {
+        errors.registration = "Please enter a valid vehicle registration.";
+    }
     // Service: must be one of the predefined options
     if (!data.service) {
         errors.service = "Please select a service.";
@@ -97,6 +104,7 @@ function handleQuoteFormSubmit(event) {
         username: form.elements.namedItem("username").value,
         email: form.elements.namedItem("email").value,
         phone: form.elements.namedItem("phone").value,
+        registration: form.elements.namedItem("registration").value,
         service: form.elements.namedItem("service").value,
     };
     // Santise first, then validate the cleaned data
@@ -104,6 +112,7 @@ function handleQuoteFormSubmit(event) {
         username: sanitiseString(rawData.username),
         email: sanitiseString(rawData.email),
         phone: sanitiseString(rawData.phone),
+        registration: sanitiseString(rawData.registration),
         service: sanitiseString(rawData.service),
     };
     // Validate the sanitised data
