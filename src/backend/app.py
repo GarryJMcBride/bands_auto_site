@@ -16,6 +16,7 @@ import logging
 from pydantic import BaseModel
 import base64
 from contextlib import asynccontextmanager
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 from starlette.templating import Jinja2Templates
 from fastapi import FastAPI, Request, Response
@@ -222,6 +223,28 @@ def sanitise(value: str) -> str:
     value = html.escape(value)                       # encode & < > " '
     value = re.sub(r"<[^>]*>", "", value)           # strip remaining tags
     return value
+
+
+# ---- Pydantic Schema --------------------------------------------------
+
+# TODO: Find out why these functions are within a pydantic schema
+
+class QuoteSubmission(BaseModel):
+    username : str
+    email : EmailStr
+    phone : str
+    registration : str
+    service : Service
+    
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v = sanitise(v)
+        if contains_injection(v):
+            raise ValueError("Invalid characters in name.")
+        if not re.match(r"^[a-zA-Z\s'\-]{2,64}$", v):
+            raise ValueError("Name must be 2–64 characters, letters only.")
+        return v    
 
 
 
