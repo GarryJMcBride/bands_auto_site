@@ -54,6 +54,10 @@ GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
 SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
 BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
+DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
+DEBUG = os.getenv("ENVIRONMENT") == "development"
+
+
 
 db_pool = None
 
@@ -395,7 +399,10 @@ def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
     submission_id : str
         uuid string to identify the submissions.
     """
-    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT, scopes=GMAIL_SCOPES)
+    credentials = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
+    ).with_subject(DELEGATED_EMAIL)
+    
     service = build("gamil", "v1", credentials=credentials)
     
     message = MIMEText(build_email_body(data, submission_id))
