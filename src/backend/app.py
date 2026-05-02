@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from enum import Enum
 import re
 import html
+from datetime import datetime, timezone
 
 from typing import AsyncGenerator
 import logging
@@ -20,7 +21,7 @@ from pydantic import BaseModel, EmailStr, field_validator, model_validator
 import uuid
 
 from starlette.templating import Jinja2Templates
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, status, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,6 +37,12 @@ import asyncpg
 
 from src.backend.routers import handle_form_inputs
 
+# Google Python Client and API
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from email.mime.text import MIMEText
+
+
 # Globals and Configurations
 load_dotenv()  # Load environment variables from .env file
 
@@ -43,6 +50,10 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(
     ","
 )  # Comma-separated list of allowed origins for CORS
+GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
+SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
+BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
 
 db_pool = None
 
@@ -338,45 +349,95 @@ async def save_submission(data: QuoteSubmission) -> str:
     """
     submission_id = str(uuid.uuid4())
     async with db_pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO quote_submissions (id, username, email, phone, service, submitted_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            """,
+            submission_id,
+            data.username,
+            data.email,
+            data.phone,
+            data.registration,
+            data.service.value,
+            data.registration,
+            datetime.now(timezone.utc),
+        )
+        return submission_id
 
+# ---- GMAIL API --------------------------------------------------
 
+def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
+    """First attempt at how the email body will look like when sent."""
+    return f"""
+    New Quote Request — {submission_id}
 
+    Name    : {data.username}
+    Email   : {data.email}
+    Phone   : {data.phone}
+    Phone   : {data.registration}
+    Service : {data.service.value}
 
-###################################
-###################################
-###################################
-###################################
-###################################
+    Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
+    """
+    
 
-# Test endpoint for quote submission - to be replaced with actual quote handling logic
+def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
+    """
+    Send a notification email to the business via Gmail API.
+    Uses a service account — no stored passwords.
+    
+    Parameters
+    ----------
+    data : QuoteSubmission
+        Sanitized Data.
+        
+    submission_id : str
+        uuid string to identify the submissions.
+    """
+    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT, scopes=GMAIL_SCOPES)
+    service = build("gamil", "v1", credentials=credentials)
+    
+    message = MIMEText(build_email_body(data, submission_id))
+    message["to"] = BUSINESS_EMAIL
+    message["subject"] = f"New Quote Request from {data.username}"
+    
+    encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    service.users().messages().send(userId="me", body={"raw": encoded}).execute()
+    
+# ---- Endpoint --------------------------------------------------
 
-
-# class QuoteSubmission(BaseModel):
-#     username: str
-#     email: str
-#     phone: str
-#     registration: str
-#     service: str
-
-
-# @app.post("/api/quote")
-# async def submit_quote(payload: QuoteSubmission):
-#     logger.info(f"Quote submitted: {payload}")
-#     return {"message": "Received", "data": payload}
-
-
-# fake_db = []
-
-
-# @app.post("/api/quote")
-# def submit(data: dict):
-#     fake_db.append(data)
-#     return {"status": "ok"}
-
-
-# @app.get("/debug/db")
-# def get_db():
-#     return fake_db
-
-
-# http://127.0.0.1:8000/debug/db
+@app.post("/api/quote", status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")  # max 5 submissions per IP per minute
+async def submit_quote(request: Request, payload: QuoteSubmission):
+    """
+    Receives, validates, sanitises, stores, and emails a quote submission.
+    Pydantic handles validation — a 422 is returned automatically on failure.
+    """
+    try:
+        # Save to PostgresSQL
+        submission_id = await save_submission(payload)
+        logger.info(f"submission saved: {submission_id}")
+        
+        # Send Gmail notificaition
+        send_gmail(payload, submission_id)
+        logger.info(f"Email send for submission: {submission_id}")
+        
+        return {
+            "message"       : "Quote request received successfully.",
+            "submission_id" : submission_id,
+        }
+        
+    except asyncpg.PostgresError as e:
+        logger.error(f"Database error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save submission. Please try again."
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred."
+        )
+    
