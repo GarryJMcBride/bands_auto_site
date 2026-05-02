@@ -3,8 +3,10 @@
  */
 
 export const VALID_SERVICES = [
-  "Website Development",
-  "Graphic Designing",
-  "Digital Marketing",
-  "App Development",
+  "Diagnostics",
+  "Tyres",
+  "Servicing",
+  "Batteries",
+  "Exhausts",
+  "Repairs",
 ] as const;

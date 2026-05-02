@@ -176,13 +176,13 @@ def read_homepage(request: Request) -> HTMLResponse:
 
 
 class Service(str, Enum):
-    # TODO: Change to actual B&S Services
-    service = "Website Development"
-    graphic = "Graphic Designing"
-    marketing = "Digital Marketing"
-    app_dev = "App Development"
-
-
+    diagnostics = "Diagnostics"
+    tyres = "Tyres"
+    servicing = "Servicing"
+    batteries = "Batteries"
+    exhausts = "Exhausts"
+    repairs = "Repairs"
+    
 # ---- Sanitisation  --------------------------------------------------
 
 # Patterns that suggest injection attempts
@@ -376,7 +376,7 @@ async def save_submission(data: QuoteSubmission) -> str:
 #     Name    : {data.username}
 #     Email   : {data.email}
 #     Phone   : {data.phone}
-#     Phone   : {data.registration}
+#     Registration   : {data.registration}
 #     Service : {data.service.value}
 
 #     Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
