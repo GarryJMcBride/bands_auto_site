@@ -25,7 +25,6 @@ from fastapi import FastAPI, Request, Response, status, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -46,15 +45,15 @@ from email.mime.text import MIMEText
 # Globals and Configurations
 load_dotenv()  # Load environment variables from .env file
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(
-    ","
-)  # Comma-separated list of allowed origins for CORS
-GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
-SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
-BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
-DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
+# DATABASE_URL = os.getenv("DATABASE_URL")
+# TODO: Configure ALLOWED_ORIGINS
+# ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(
+#     ","
+# )  # Comma-separated list of allowed origins for CORS
+# GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
+# SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
+# BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
+# DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
 DEBUG = os.getenv("ENVIRONMENT") == "development"
 
 
@@ -72,20 +71,20 @@ logger = logging.getLogger(__name__)
 
 
 # FastAPI LifeSpan
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Lifespan function to manage startup and shutdown events for the FastAPI application."""
-    global db_pool
+# @asynccontextmanager
+# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+#     """Lifespan function to manage startup and shutdown events for the FastAPI application."""
+#     global db_pool
 
-    # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
-    do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+#     # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
+#     do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
 
-    logger.info("Database connection pool created")
+#     logger.info("Database connection pool created")
 
-    yield
-    await do_pool.close()
+#     yield
+#     await do_pool.close()
 
-    logger.info("Database connection pool closed")
+#     logger.info("Database connection pool closed")
 
 
 # Rate Limiter for API endpoints - Security and traffic management
@@ -98,7 +97,7 @@ app = FastAPI(
     title="B&S Auto",
     description="A web application for B&S Auto to manage customer interactions and services.",
     version="1.0.0",
-    lifespan=lifespan,
+    # lifespan=lifespan, TODO: Uncomment lifespan once DB Set up 
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -112,10 +111,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # ---- Middleware & Security Config --------------------------------------------------
 
 # Middleware Setup - Security and CORS
-app.add_middleware(HTTPSRedirectMiddleware)
 app.add_middleware(
     CORSMiddleware,  # CORS — only allow your own domain
-    allow_origins=ALLOWED_ORIGINS,  # whitelist of trusted frontends
+    # allow_origins=ALLOWED_ORIGINS,  # whitelist of trusted frontends
     allow_methods=["POST"],  # only POST requests are allowed cross-origin
     allow_headers=["Content-Type"],  # only this header is permitted
 )
@@ -148,8 +146,8 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # ---- Endpoints, Routers and Static Files --------------------------------------------------
 
-# Routers
-app.include_router(handle_form_inputs.router)
+# Routers TODO: Uncomment when moving components to other files
+# app.include_router(handle_form_inputs.router)
 
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
 # Mount static files so FASTAPI can serve them to the browser
@@ -172,8 +170,7 @@ def read_homepage(request: Request) -> HTMLResponse:
     logging.info("Homepage accessed")
 
     # TODO: Implement Jinja for this
-    return templates.TemplateResponse("index.html", {"request": request})
-
+    return templates.TemplateResponse(request=request, name="index.html")
 
 # ---- Enums and Data Models --------------------------------------------------
 
@@ -369,48 +366,48 @@ async def save_submission(data: QuoteSubmission) -> str:
         )
         return submission_id
 
-# ---- GMAIL API --------------------------------------------------
+# ---- GMAIL API TODO: Configure GMAIL API --------------------------------------------------
 
-def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
-    """First attempt at how the email body will look like when sent."""
-    return f"""
-    New Quote Request — {submission_id}
+# def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
+#     """First attempt at how the email body will look like when sent."""
+#     return f"""
+#     New Quote Request — {submission_id}
 
-    Name    : {data.username}
-    Email   : {data.email}
-    Phone   : {data.phone}
-    Phone   : {data.registration}
-    Service : {data.service.value}
+#     Name    : {data.username}
+#     Email   : {data.email}
+#     Phone   : {data.phone}
+#     Phone   : {data.registration}
+#     Service : {data.service.value}
 
-    Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
-    """
+#     Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
+#     """
     
 
-def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
-    """
-    Send a notification email to the business via Gmail API.
-    Uses a service account — no stored passwords.
+# def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
+#     """
+#     Send a notification email to the business via Gmail API.
+#     Uses a service account — no stored passwords.
     
-    Parameters
-    ----------
-    data : QuoteSubmission
-        Sanitized Data.
+#     Parameters
+#     ----------
+#     data : QuoteSubmission
+#         Sanitized Data.
         
-    submission_id : str
-        uuid string to identify the submissions.
-    """
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
-    ).with_subject(DELEGATED_EMAIL)
+#     submission_id : str
+#         uuid string to identify the submissions.
+#     """
+#     credentials = service_account.Credentials.from_service_account_file(
+#         SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
+#     ).with_subject(DELEGATED_EMAIL)
     
-    service = build("gamil", "v1", credentials=credentials)
+#     service = build("gamil", "v1", credentials=credentials)
     
-    message = MIMEText(build_email_body(data, submission_id))
-    message["to"] = BUSINESS_EMAIL
-    message["subject"] = f"New Quote Request from {data.username}"
+#     message = MIMEText(build_email_body(data, submission_id))
+#     message["to"] = BUSINESS_EMAIL
+#     message["subject"] = f"New Quote Request from {data.username}"
     
-    encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    service.users().messages().send(userId="me", body={"raw": encoded}).execute()
+#     encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
+#     service.users().messages().send(userId="me", body={"raw": encoded}).execute()
     
 # ---- Endpoint --------------------------------------------------
 
@@ -427,7 +424,7 @@ async def submit_quote(request: Request, payload: QuoteSubmission):
         logger.info(f"submission saved: {submission_id}")
         
         # Send Gmail notificaition
-        send_gmail(payload, submission_id)
+        # send_gmail(payload, submission_id) # GMAIL NEED SET UP
         logger.info(f"Email send for submission: {submission_id}")
         
         return {
