@@ -1,4 +1,25 @@
+# --- User Interface ---
 /src/frontend/static/images
-/.venv
+
+# --- JavaScript ---
 /node_modules
+
+# --- Python Specific ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Environments ---
+/.venv
 /.env
+
+# --- IDE / Editor Settings ---
+.vscode/
+
+# PyCharm / IntelliJ
+.idea/
+
+# --- Testing & Coverage ---
+.coverage
+.cache
+.pytest_cache/
