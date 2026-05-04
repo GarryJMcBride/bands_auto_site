@@ -46,16 +46,15 @@ from email.mime.text import MIMEText
 load_dotenv()  # Load environment variables from .env file
 
 # DATABASE_URL = os.getenv("DATABASE_URL")
+# BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
+# DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
+# SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
 # TODO: Configure ALLOWED_ORIGINS
 # ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(
 #     ","
 # )  # Comma-separated list of allowed origins for CORS
 # GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
-# SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
-# BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
-# DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
 DEBUG = os.getenv("ENVIRONMENT") == "development"
-
 
 
 db_pool = None
@@ -97,7 +96,7 @@ app = FastAPI(
     title="B&S Auto",
     description="A web application for B&S Auto to manage customer interactions and services.",
     version="1.0.0",
-    # lifespan=lifespan, TODO: Uncomment lifespan once DB Set up 
+    # lifespan=lifespan, TODO: Uncomment lifespan once DB Set up
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -172,6 +171,7 @@ def read_homepage(request: Request) -> HTMLResponse:
     # TODO: Implement Jinja for this
     return templates.TemplateResponse(request=request, name="index.html")
 
+
 # ---- Enums and Data Models --------------------------------------------------
 
 
@@ -182,7 +182,8 @@ class Service(str, Enum):
     batteries = "Batteries"
     exhausts = "Exhausts"
     repairs = "Repairs"
-    
+
+
 # ---- Sanitisation  --------------------------------------------------
 
 # Patterns that suggest injection attempts
@@ -366,6 +367,7 @@ async def save_submission(data: QuoteSubmission) -> str:
         )
         return submission_id
 
+
 # ---- GMAIL API TODO: Configure GMAIL API --------------------------------------------------
 
 # def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
@@ -381,35 +383,36 @@ async def save_submission(data: QuoteSubmission) -> str:
 
 #     Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
 #     """
-    
+
 
 # def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
 #     """
 #     Send a notification email to the business via Gmail API.
 #     Uses a service account — no stored passwords.
-    
+
 #     Parameters
 #     ----------
 #     data : QuoteSubmission
 #         Sanitized Data.
-        
+
 #     submission_id : str
 #         uuid string to identify the submissions.
 #     """
 #     credentials = service_account.Credentials.from_service_account_file(
 #         SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
 #     ).with_subject(DELEGATED_EMAIL)
-    
+
 #     service = build("gamil", "v1", credentials=credentials)
-    
+
 #     message = MIMEText(build_email_body(data, submission_id))
 #     message["to"] = BUSINESS_EMAIL
 #     message["subject"] = f"New Quote Request from {data.username}"
-    
+
 #     encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
 #     service.users().messages().send(userId="me", body={"raw": encoded}).execute()
-    
+
 # ---- Endpoint --------------------------------------------------
+
 
 @app.post("/api/quote", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")  # max 5 submissions per IP per minute
@@ -422,26 +425,25 @@ async def submit_quote(request: Request, payload: QuoteSubmission):
         # Save to PostgresSQL
         submission_id = await save_submission(payload)
         logger.info(f"submission saved: {submission_id}")
-        
+
         # Send Gmail notificaition
         # send_gmail(payload, submission_id) # GMAIL NEED SET UP
         logger.info(f"Email send for submission: {submission_id}")
-        
+
         return {
-            "message"       : "Quote request received successfully.",
-            "submission_id" : submission_id,
+            "message": "Quote request received successfully.",
+            "submission_id": submission_id,
         }
-        
+
     except asyncpg.PostgresError as e:
         logger.error(f"Database error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save submission. Please try again."
+            detail="Failed to save submission. Please try again.",
         )
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred."
+            detail="An unexpected error occurred.",
         )
-    

@@ -27,7 +27,7 @@ As a mobile mechanic service, we bring expert vehicle care directly to your door
 It all started with a simple idea: to make car repairs easier and more personal. What began as a passion for fixing vehicles has grown into a mobile mechanic service dedicated to bringing expert care straight to our customers.
 
 
-## Services
+## Services *(ADDED)*
 
 Diagnostics
 We use advanced diagnostic tools to read fault codes, monitor live data, and pinpoint issues accurately. From engine warnings to electrical faults, we don’t guess, we test, trace, and explain the problem clearly, so you know exactly what needs done and why before any work begins.
