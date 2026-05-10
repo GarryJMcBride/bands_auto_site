@@ -103,7 +103,7 @@ In the HMTL pages `<a href="thisPage.html">thisPage</a>` is a `GET /` reqeust to
 With the implementation/use of `FastAPI`, the requests are now handled by the Python Framework, and now we use `<a href="/thisPage">thisPage</a>` which is a call to the `FastAPI` Endpoint. 
 
 ```bash
-# TODO: Change this code snipped to reflect actual page names from B&S Auto Site
+# TODO: Change this code snipped to reflect actual page names from B&S Autos Site
 # HTML
 <a href="/thisPage">thisPage</a>
 

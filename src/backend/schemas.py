@@ -1,5 +1,5 @@
 # schemas.py
-""" "Defines Pydantic models for data validation and serialization in the B&S Auto web application.
+""" "Defines Pydantic models for data validation and serialization in the B&S Autos web application.
 
 These models represent the structure of data for customer interactions, service requests, and other relevant
 entities in the application.

@@ -1,7 +1,7 @@
-"""FASTAPI Framework and Main App Endpoints for B&S Auto Web Application.
+"""FASTAPI Framework and Main App Endpoints for B&S Autos Web Application.
 
 This module defines the main FastAPI application, including the setup of static file serving,
-template rendering, and the primary endpoints for the B&S Auto web application.
+template rendering, and the primary endpoints for the B&S Autos web application.
 
 The application serves the homepage."""
 
@@ -93,8 +93,8 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["5/hour"])
 
 # Initialize FastAPI application
 app = FastAPI(
-    title="B&S Auto",
-    description="A web application for B&S Auto to manage customer interactions and services.",
+    title="B&S Autos",
+    description="A web application for B&S Autos to manage customer interactions and services.",
     version="1.0.0",
     # lifespan=lifespan, TODO: Uncomment lifespan once DB Set up
     docs_url=None,
