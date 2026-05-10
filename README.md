@@ -1,4 +1,4 @@
-# bands_auto_site
+# bands_autos_site
 
 ## Documentation
 

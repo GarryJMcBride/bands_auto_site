@@ -87,7 +87,7 @@ wheels = [
 ]
 
 [[package]]
-name = "bands-auto-site"
+name = "bands-autos-site"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
