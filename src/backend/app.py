@@ -43,9 +43,10 @@ from email.mime.text import MIMEText
 
 
 # Globals and Configurations
+# TODO: Use Pydantic settings instead to being ENV variables in
 load_dotenv()  # Load environment variables from .env file
 
-# DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 # BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
 # DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
 # SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
@@ -70,20 +71,20 @@ logger = logging.getLogger(__name__)
 
 
 # FastAPI LifeSpan
-# @asynccontextmanager
-# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-#     """Lifespan function to manage startup and shutdown events for the FastAPI application."""
-#     global db_pool
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Lifespan function to manage startup and shutdown events for the FastAPI application."""
+    global db_pool
 
-#     # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
-#     do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+    # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
+    do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
 
-#     logger.info("Database connection pool created")
+    logger.info("Database connection pool created")
 
-#     yield
-#     await do_pool.close()
+    yield
+    await do_pool.close()
 
-#     logger.info("Database connection pool closed")
+    logger.info("Database connection pool closed")
 
 
 # Rate Limiter for API endpoints - Security and traffic management
@@ -245,8 +246,6 @@ def sanitise(value: str) -> str:
 # ---- Pydantic Schema --------------------------------------------------
 
 # TODO: Find out why these functions are within a pydantic schema
-
-
 class QuoteSubmission(BaseModel):
     username: str
     email: EmailStr
@@ -428,7 +427,7 @@ async def submit_quote(request: Request, payload: QuoteSubmission):
 
         # Send Gmail notificaition
         # send_gmail(payload, submission_id) # GMAIL NEED SET UP
-        logger.info(f"Email send for submission: {submission_id}")
+        # logger.info(f"Email send for submission: {submission_id}")
 
         return {
             "message": "Quote request received successfully.",
