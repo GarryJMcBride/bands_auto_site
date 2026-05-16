@@ -426,7 +426,7 @@ async def submit_quote(request: Request, payload: QuoteSubmission):
         # send_gmail(payload)
         logger.info("Email send successfully!")
     except Exception as e: 
-        logger.info("Email error: {e}")
+        logger.info(f"Email error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to send confirmination email. Please try again later."

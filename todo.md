@@ -44,6 +44,10 @@
 
 ---
 
+### Add Error handling from the server to the frontend
+
+[ ] Implement warnings on the frontend from the server for HTTPExceptions
+
 ## 2. Frontend Architecture (JavaScript / TypeScript)
 
 ### JavaScript & API Integration
