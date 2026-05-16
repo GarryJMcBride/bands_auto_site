@@ -419,30 +419,57 @@ async def submit_quote(request: Request, payload: QuoteSubmission):
     """
     Receives, validates, sanitises, stores, and emails a quote submission.
     Pydantic handles validation — a 422 is returned automatically on failure.
+    
+    If database does not update, Email is still sent.
     """
-    try:
-        # Save to PostgresSQL
-        submission_id = await save_submission(payload)
-        logger.info(f"submission saved: {submission_id}")
-
-        # Send Gmail notificaition
-        # send_gmail(payload, submission_id) # GMAIL NEED SET UP
-        # logger.info(f"Email send for submission: {submission_id}")
-
-        return {
-            "message": "Quote request received successfully.",
-            "submission_id": submission_id,
-        }
-
-    except asyncpg.PostgresError as e:
-        logger.error(f"Database error: {e}")
+    try: 
+        # send_gmail(payload)
+        logger.info("Email send successfully!")
+    except Exception as e: 
+        logger.info("Email error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save submission. Please try again.",
+            detail="Failed to send confirmination email. Please try again later."
         )
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
-        )
+        
+    await update_database(payload)
+    return {"message": "Quote request recieved successfully."}
+    # try:
+    #     # Save to PostgresSQL
+    #     submission_id = await save_submission(payload)
+    #     logger.info(f"submission saved: {submission_id}")
+
+    #     # Send Gmail notificaition
+    #     # send_gmail(payload, submission_id) # GMAIL NEED SET UP
+    #     # logger.info(f"Email send for submission: {submission_id}")
+
+    #     return {
+    #         "message": "Quote request received successfully.",
+    #         "submission_id": submission_id,
+    #     }
+
+    # except asyncpg.PostgresError as e:
+    #     logger.error(f"Database error: {e}")
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="Failed to save submission. Please try again.",
+    #     )
+    # except Exception as e:
+    #     logger.error(f"Unexpected error: {e}")
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="An unexpected error occurred.",
+    #     )
+    
+async def update_database(payload: QuoteSubmission):
+    """Updates the Database with the submission by the users.
+    
+    Takes save submission and receives SubmissionID.
+    
+    Parameters
+    ----------
+        payload : QuoteSubmission
+            The data wrapped in pydantic class
+    """
+    submission_id = await save_submission(payload)
+    logger.info(f"Submission saved: {submission_id}")
