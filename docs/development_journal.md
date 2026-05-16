@@ -391,7 +391,90 @@ For example without CORS configured:
 
 `ALLOWED_ORIGINS` tells FastAPI which domains are permitted to call your API. Anyone not on that list gets blocked at the browser level.
 
+## Installing and Setting up POSTGRES
 
+### 1. Install PostgreSQL
 
+Download the installer from:
+```
+https://www.postgresql.org/download/windows/
+```
+Run it and note down:
+- The **password** you set for the `postgres` superuser
+- The **port** (default `5432`)
 
+---
 
+### 2. Add PostgreSQL to your PATH
+
+During installation check **"Add to PATH"** or add it manually:
+```
+C:\Program Files\PostgreSQL\16\bin
+```
+
+---
+
+### 3. Connect to PostgreSQL
+
+Open a terminal:
+```bash
+psql -U postgres
+```
+Enter your password when prompted.
+
+---
+
+### 4. Create your database and user
+
+```sql
+CREATE DATABASE bands_auto;
+CREATE USER bands_user WITH PASSWORD 'yourpassword';
+GRANT ALL PRIVILEGES ON DATABASE bands_auto TO bands_user;
+\c bands_auto
+GRANT ALL ON SCHEMA public TO bands_user;
+```
+
+---
+
+### 5. Create your submissions table
+
+```sql
+CREATE TABLE quote_submissions (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username     VARCHAR(64)  NOT NULL,
+    email        VARCHAR(254) NOT NULL,
+    phone        VARCHAR(20)  NOT NULL,
+    registration VARCHAR(7)   NOT NULL,
+    service      VARCHAR(50)  NOT NULL,
+    submitted_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+```
+
+---
+
+### 6. Update your `.env`
+
+```env
+DATABASE_URL="postgresql://bands_user:yourpassword@localhost:5432/bands_auto"
+```
+
+---
+
+### 7. Test the connection in Python
+
+```bash
+pip install asyncpg
+```
+
+```python
+import asyncio
+import asyncpg
+import os
+
+async def test():
+    conn = await asyncpg.connect(os.getenv("DATABASE_URL"))
+    print("Connected successfully")
+    await conn.close()
+
+asyncio.run(test())
+```
