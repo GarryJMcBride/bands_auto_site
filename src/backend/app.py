@@ -420,7 +420,7 @@ async def submit_quote(request: Request, payload: QuoteSubmission):
     Receives, validates, sanitises, stores, and emails a quote submission.
     Pydantic handles validation — a 422 is returned automatically on failure.
     
-    If database does not update, Email is still sent.
+    Email is still sent, whether or not the database updates.
     """
     try: 
         # send_gmail(payload)
