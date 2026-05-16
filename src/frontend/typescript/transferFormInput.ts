@@ -202,7 +202,8 @@ function clearErrors(form: HTMLFormElement): void {
 async function submitQuoteData(data: QuoteFormData): Promise<void> {
   try {
     // fetch is used here to send the data to the backend API
-    const response = await fetch("/api/quote", { // TODO: FASTAPI endpoint here
+    // const response = await fetch("/api/quote", {
+    const response = await fetch("http://127.0.0.1:8000/api/quote", { // Full URL in fetch call: TODO: issue with proxy?
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

@@ -54,7 +54,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(
 #     ","
 # )  # Comma-separated list of allowed origins for CORS
-# GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
+GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
 DEBUG = os.getenv("ENVIRONMENT") == "development"
 
 
@@ -97,7 +97,7 @@ app = FastAPI(
     title="B&S Autos",
     description="A web application for B&S Autos to manage customer interactions and services.",
     version="1.0.0",
-    # lifespan=lifespan, TODO: Uncomment lifespan once DB Set up
+    lifespan=lifespan, # TODO: Uncomment lifespan once DB Set up
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -369,46 +369,46 @@ async def save_submission(data: QuoteSubmission) -> str:
 
 # ---- GMAIL API TODO: Configure GMAIL API --------------------------------------------------
 
-# def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
-#     """First attempt at how the email body will look like when sent."""
-#     return f"""
-#     New Quote Request — {submission_id}
+def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
+    """First attempt at how the email body will look like when sent."""
+    return f"""
+    New Quote Request — {submission_id}
 
-#     Name    : {data.username}
-#     Email   : {data.email}
-#     Phone   : {data.phone}
-#     Registration   : {data.registration}
-#     Service : {data.service.value}
+    Name    : {data.username}
+    Email   : {data.email}
+    Phone   : {data.phone}
+    Registration   : {data.registration}
+    Service : {data.service.value}
 
-#     Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
-#     """
+    Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
+    """
 
 
-# def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
-#     """
-#     Send a notification email to the business via Gmail API.
-#     Uses a service account — no stored passwords.
+def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
+    """
+    Send a notification email to the business via Gmail API.
+    Uses a service account — no stored passwords.
 
-#     Parameters
-#     ----------
-#     data : QuoteSubmission
-#         Sanitized Data.
+    Parameters
+    ----------
+    data : QuoteSubmission
+        Sanitized Data.
 
-#     submission_id : str
-#         uuid string to identify the submissions.
-#     """
-#     credentials = service_account.Credentials.from_service_account_file(
-#         SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
-#     ).with_subject(DELEGATED_EMAIL)
+    submission_id : str
+        uuid string to identify the submissions.
+    """
+    credentials = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
+    ).with_subject(DELEGATED_EMAIL)
 
-#     service = build("gamil", "v1", credentials=credentials)
+    service = build("gamil", "v1", credentials=credentials)
 
-#     message = MIMEText(build_email_body(data, submission_id))
-#     message["to"] = BUSINESS_EMAIL
-#     message["subject"] = f"New Quote Request from {data.username}"
+    message = MIMEText(build_email_body(data, submission_id))
+    message["to"] = BUSINESS_EMAIL
+    message["subject"] = f"New Quote Request from {data.username}"
 
-#     encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
-#     service.users().messages().send(userId="me", body={"raw": encoded}).execute()
+    encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    service.users().messages().send(userId="me", body={"raw": encoded}).execute()
 
 # ---- Endpoint --------------------------------------------------
 
