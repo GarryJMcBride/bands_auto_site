@@ -77,12 +77,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global db_pool
 
     # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
-    do_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+    db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
 
     logger.info("Database connection pool created")
 
     yield
-    await do_pool.close()
+    await db_pool.close()
 
     logger.info("Database connection pool closed")
 
@@ -352,8 +352,8 @@ async def save_submission(data: QuoteSubmission) -> str:
     async with db_pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO quote_submissions (id, username, email, phone, service, submitted_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO quote_submissions (id, username, email, phone, registration, service, submitted_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             """,
             submission_id,
             data.username,
@@ -361,7 +361,6 @@ async def save_submission(data: QuoteSubmission) -> str:
             data.phone,
             data.registration,
             data.service.value,
-            data.registration,
             datetime.now(timezone.utc),
         )
         return submission_id
