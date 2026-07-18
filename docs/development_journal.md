@@ -478,3 +478,37 @@ async def test():
 
 asyncio.run(test())
 ```
+
+## Installing ClaudeCode Native Installer to Windows OS
+
+**Claude Code – Windows Install Guide**
+
+### 1. **Install Git for Windows** (recommended, not required): https://git-scm.com/downloads/win — defaults are fine.
+
+### 2. **Open PowerShell** (not CMD) and run:
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+### 3. **Add it to PATH** (the installer sometimes doesn't do this automatically):
+```powershell
+[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.local\bin", "User")
+```
+Close and reopen PowerShell.
+
+### 4. **Verify:**
+```powershell
+claude --version
+```
+
+### 5. **Authenticate:** run `claude` in any folder, follow the OAuth prompt (Claude Pro/Max/Team account or API key).
+
+### 6. **If using Git Bash too**, make sure `~/.bashrc` exists and includes:
+```bash
+export PATH="$PATH:/c/Users/<yourname>/.local/bin"
+```
+Then `source ~/.bashrc` or open a new window.
+
+### 7. **Keep config out of repos:** store project instructions in `~/.claude/CLAUDE.md` (global) rather than a per-repo `.claude/CLAUDE.md`, or add `.claude/` to `.gitignore` if you do want repo-level config.
+
+That's the whole path — no npm/npx needed, since the native installer is self-contained.
