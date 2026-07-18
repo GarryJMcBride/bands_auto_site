@@ -10,11 +10,11 @@ FAQs
 Call anytine
 07584243122
 
-## Banner 1
+# Banner 1
 Heading: MOBILE MECHANIC & TYRE SERVICE
 Text Block: We're committed to delivering exceptional service, putting our customers first in everything we do. With a focus on quality, reliability, and care, we ensure every project meets the highest standards.
 
-## Banner 2
+# Banner 2
 Heading: We come to you
 Text Block: We come to you, making everything simple and convenient. Delivering reliable, high-quality service right at your doorstep, saving you time while ensuring a professional and hassle-free experience every time.
 
