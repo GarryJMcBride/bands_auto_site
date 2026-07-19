@@ -47,9 +47,9 @@ from email.mime.text import MIMEText
 load_dotenv()  # Load environment variables from .env file
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-# BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
-# DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
-# SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
+BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
+DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
+SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
 # TODO: Configure ALLOWED_ORIGINS
 # ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(
 #     ","
@@ -97,7 +97,7 @@ app = FastAPI(
     title="B&S Autos",
     description="A web application for B&S Autos to manage customer interactions and services.",
     version="1.0.0",
-    lifespan=lifespan, # TODO: Uncomment lifespan once DB Set up
+    lifespan=lifespan,
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -245,6 +245,7 @@ def sanitise(value: str) -> str:
 
 # ---- Pydantic Schema --------------------------------------------------
 
+
 # TODO: Find out why these functions are within a pydantic schema
 class QuoteSubmission(BaseModel):
     username: str
@@ -368,6 +369,7 @@ async def save_submission(data: QuoteSubmission) -> str:
 
 # ---- GMAIL API TODO: Configure GMAIL API --------------------------------------------------
 
+
 def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
     """First attempt at how the email body will look like when sent."""
     return f"""
@@ -409,66 +411,58 @@ def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
     encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
     service.users().messages().send(userId="me", body={"raw": encoded}).execute()
 
+
 # ---- Endpoint --------------------------------------------------
 
 
 @app.post("/api/quote", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")  # max 5 submissions per IP per minute
-async def submit_quote(request: Request, payload: QuoteSubmission):
+async def submit_quote(request: Request, payload: QuoteSubmission) -> dict:
     """
     Receives, validates, sanitises, stores, and emails a quote submission.
     Pydantic handles validation — a 422 is returned automatically on failure.
-    
+
     Email is still sent, whether or not the database updates.
     """
-    try: 
+    try:
         # send_gmail(payload)
         logger.info("Email send successfully!")
-    except Exception as e: 
+    except Exception as e:
         logger.info(f"Email error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send confirmination email. Please try again later."
+            detail="Failed to send confirmination email. Please try again later.",
         )
-        
-    await update_database(payload)
-    return {"message": "Quote request recieved successfully."}
-    # try:
-    #     # Save to PostgresSQL
-    #     submission_id = await save_submission(payload)
-    #     logger.info(f"submission saved: {submission_id}")
 
-    #     # Send Gmail notificaition
-    #     # send_gmail(payload, submission_id) # GMAIL NEED SET UP
-    #     # logger.info(f"Email send for submission: {submission_id}")
+    submission_id = await update_database(payload)
+    return {
+        "message": "Quote request received successfully.",
+        "submission_id": submission_id,
+    }
 
-    #     return {
-    #         "message": "Quote request received successfully.",
-    #         "submission_id": submission_id,
-    #     }
 
-    # except asyncpg.PostgresError as e:
-    #     logger.error(f"Database error: {e}")
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="Failed to save submission. Please try again.",
-    #     )
-    # except Exception as e:
-    #     logger.error(f"Unexpected error: {e}")
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="An unexpected error occurred.",
-    #     )
-    
-async def update_database(payload: QuoteSubmission):
+async def update_database(payload: QuoteSubmission) -> str:
     """Updates the Database with the submission by the users.
-    
+
     Takes save submission and receives SubmissionID.
-    
+
     Parameters
     ----------
         payload : QuoteSubmission
             The data wrapped in pydantic class
+
+    Returns
+    -------
+        submission_id : str
+            The UUID of the newly created quote submission record
     """
-    submission_id = await save_submission(payload)
-    logger.info(f"Submission saved: {submission_id}")
+    try:
+        submission_id = await save_submission(payload)
+        logger.info(f"Submission saved: {submission_id}")
+        return submission_id
+    except asyncpg.PostgresError as e:
+        logger.error(f"Database error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save submission to the database. Please try again later.",
+        )

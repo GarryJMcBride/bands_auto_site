@@ -2,7 +2,7 @@ import DOMPurify from "dompurify";
 
 import type { QuoteFormData } from "./types";
 import type { ValidationResult } from "./types";
-import { VALID_SERVICES } from "./classes";
+import { VALID_SERVICES } from "./classes.js";
 
 // ---- Sanitisation --------------------------------------------------
 

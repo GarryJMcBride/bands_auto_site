@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { VALID_SERVICES } from "./classes";
+import { VALID_SERVICES } from "./classes.js";
 // ---- Sanitisation --------------------------------------------------
 /**
  * Sanitises user input for safe frontend rendering.
