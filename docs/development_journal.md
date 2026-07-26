@@ -471,10 +471,12 @@ import asyncio
 import asyncpg
 import os
 
+
 async def test():
     conn = await asyncpg.connect(os.getenv("DATABASE_URL"))
     print("Connected successfully")
     await conn.close()
+
 
 asyncio.run(test())
 ```
@@ -512,3 +514,14 @@ Then `source ~/.bashrc` or open a new window.
 ### 7. **Keep config out of repos:** store project instructions in `~/.claude/CLAUDE.md` (global) rather than a per-repo `.claude/CLAUDE.md`, or add `.claude/` to `.gitignore` if you do want repo-level config.
 
 That's the whole path — no npm/npx needed, since the native installer is self-contained.
+
+## Email Sending pipeline
+
+See Claude conversation regarding using advanced GMAIL logic that is more suited for a pool of 500 email users... rather than a simple SMPT email send as its just brian alone in the the business.
+
+The important work is done with honeypots, Rate limiting, validation, sanitization, cleaning etc. The GMAIL API is advanced but is more suited for a larger scale orgaziation.
+
+- Decide and change architecture.
+- Capture the simple architecture and note what GMAIL API could be used for in the future
+    - GMAIL api comes with alot of "meta" security layers like tokens etc.
+    - This is overkill for a simple send email to personal email address
