@@ -13,6 +13,13 @@
 * [ ] Add these todos into **WND (Web Notes/Docs)**
   → Turn this into a reusable **“Website Development Process Checklist”**
 
+  - Use commit history from github to add todos for process
+  - Use already predefined check list for Takmadoon
+
+### Architecture
+
+* [ ] Create diagram of architecture, including frontend and backend notes such as packages or libraries, JQUERY, and bootstrap
+
 ### FastAPI Integration
 
 * [ ] Fix static file paths for FastAPI:
