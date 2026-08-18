@@ -316,6 +316,7 @@ Allow users to submit only a registration number and automatically retrieve vehi
 ---
 
 ## 10. Security
+
 * [ ] Try to Penetrate Site with Scripts and other methods
 * [ ] Scan Browser console for any passwords or risky data exposure
 * [ ] Check out OWASP or other security methods defined by industry professionals
@@ -325,3 +326,7 @@ Allow users to submit only a registration number and automatically retrieve vehi
     * API keys
     * Certs for HTTP and HTTPS for APIs
     * FastAPI Lifespan
+
+## 11. House keeping
+
+* [ ] Remove all references to Linoor on html index.html as it uses different content for mobile responsiveness
