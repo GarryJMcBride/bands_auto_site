@@ -73,7 +73,7 @@
 
 ### Initial Setup
 
-* [ ] Install and configure TypeScript
+* [x] Install and configure TypeScript
 * [ ] Define compilation workflow:
 
   * Run compiler separately OR integrate into dev server
@@ -143,7 +143,7 @@
 
 ---
 
-## 5. CSS, UI & Styling
+## 5. HTML, CSS, UI & Styling
 
 ### Understanding Current Setup
 
@@ -174,6 +174,8 @@
     * `css/colours`
     * `cssvariables`
   * Simplify styling approach
+
+* [ ] Remove all references to Linoor on html index.html as it uses different content for mobile responsiveness
 
 ---
 
@@ -327,6 +329,3 @@ Allow users to submit only a registration number and automatically retrieve vehi
     * Certs for HTTP and HTTPS for APIs
     * FastAPI Lifespan
 
-## 11. House keeping
-
-* [ ] Remove all references to Linoor on html index.html as it uses different content for mobile responsiveness
