@@ -327,6 +327,10 @@ Allow users to submit only a registration number and automatically retrieve vehi
 ## 10. Security
 
 * [ ] Add honeypot field or rate limiting on the form endpoint to stop spam
+      - Add a honeypot field to the form schema (hidden field bots fill in, humans don't —
+        reject silently if populated).
+      - Add IP-based rate limiting on the submission endpoint (e.g. via `slowapi` or
+        equivalent — check what's already in the project's dependencies first).
 * [ ] Try to Penetrate Site with Scripts and other methods
 * [ ] Scan Browser console for any passwords or risky data exposure
 * [ ] Check out OWASP or other security methods defined by industry professionals
@@ -336,4 +340,10 @@ Allow users to submit only a registration number and automatically retrieve vehi
     * API keys
     * Certs for HTTP and HTTPS for APIs
     * FastAPI Lifespan
+
+## 11. Tests
+- Write an integration test that calls the email-sending function against the
+  temporary SMTP config and asserts no exception is raised.
+- Write unit tests for the Pydantic validation (reject injection attempts, reject
+  honeypot-filled submissions, accept valid submissions).
 
