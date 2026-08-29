@@ -326,6 +326,7 @@ Allow users to submit only a registration number and automatically retrieve vehi
 
 ## 10. Security
 
+* [ ] Add honeypot field or rate limiting on the form endpoint to stop spam
 * [ ] Try to Penetrate Site with Scripts and other methods
 * [ ] Scan Browser console for any passwords or risky data exposure
 * [ ] Check out OWASP or other security methods defined by industry professionals
