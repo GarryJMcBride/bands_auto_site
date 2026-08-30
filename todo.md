@@ -42,6 +42,11 @@
   * `ruff` (linting)
   * `pylance` (type checking / IntelliSense)
 
+### Documentation
+
+* [ ] Add MkDocs for project documentation (build `docs/` — `architecture.md`,
+  `development_journal.md`, `site_content.md` — into a browsable static site)
+
 ### Static Assets
 
 * [ ] Move `/images` into FastAPI `static/` directory
@@ -372,6 +377,13 @@ Allow users to submit only a registration number and automatically retrieve vehi
   temporary SMTP config and asserts no exception is raised.
 - Write unit tests for the Pydantic validation (reject injection attempts, reject
   honeypot-filled submissions, accept valid submissions).
+- [ ] Add a test for a user entering a space in the vehicle registration field —
+  decide whether to strip/normalise it or reject it outright, then test that
+  behaviour (client-side regex in `transferFormInput.ts` and the backend
+  `field_validator` in `app.py` both need to agree on the rule).
+- [ ] Add an end-to-end test proving the no-JS `/quote-python-pipeline` fallback
+  works and that it updates the server (DB row saved + email sent) the same as
+  the JS pipeline does.
 
 ## 12. Email Delivery — Move off temporary Gmail mailbox to a proper ESP
 
