@@ -14,8 +14,6 @@ from datetime import datetime, timezone
 
 from typing import AsyncGenerator
 import logging
-from pydantic import BaseModel
-import base64
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 import uuid
@@ -34,12 +32,12 @@ from slowapi.errors import RateLimitExceeded
 
 import asyncpg
 
-from src.backend.routers import handle_form_inputs
+# Async, native-Python SMTP transport (replaces the old Gmail API client).
+import aiosmtplib
+from email.message import EmailMessage
 
-# Google Python Client and API
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from email.mime.text import MIMEText
+from src.backend import config
+from src.backend.routers import handle_form_inputs
 
 
 # Globals and Configurations
@@ -47,14 +45,11 @@ from email.mime.text import MIMEText
 load_dotenv()  # Load environment variables from .env file
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")
-DELEGATED_EMAIL = os.getenv("DELEGATED_EMAIL")
-SERVICE_ACCOUNT = os.getenv("DATASERVICE_ACCOUNT")
 # TODO: Configure ALLOWED_ORIGINS
 # ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(
 #     ","
 # )  # Comma-separated list of allowed origins for CORS
-GMAIL_SCOPES = os.getenv("GMAIL_SCOPES")
+# SMTP / email settings live in config.py (loaded from .env).
 DEBUG = os.getenv("ENVIRONMENT") == "development"
 
 
@@ -367,7 +362,7 @@ async def save_submission(data: QuoteSubmission) -> str:
         return submission_id
 
 
-# ---- GMAIL API TODO: Configure GMAIL API --------------------------------------------------
+# ---- Email (SMTP via aiosmtplib) --------------------------------------------------
 
 
 def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
@@ -385,31 +380,37 @@ def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
     """
 
 
-def send_gmail(data: QuoteSubmission, submission_id: str) -> None:
-    """
-    Send a notification email to the business via Gmail API.
-    Uses a service account — no stored passwords.
+async def send_email(data: QuoteSubmission, submission_id: str) -> None:
+    """Send a quote-notification email to the business over SMTP.
+
+    Transport is async (aiosmtplib) and fully configured from the environment
+    (see config.py / .env), so switching the temporary Gmail app-password
+    mailbox for a proper ESP later requires no changes here.
 
     Parameters
     ----------
     data : QuoteSubmission
-        Sanitized Data.
-
+        Validated and sanitised submission data.
     submission_id : str
-        uuid string to identify the submissions.
+        UUID string identifying the stored submission.
     """
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT, scopes=GMAIL_SCOPES
-    ).with_subject(DELEGATED_EMAIL)
+    message = EmailMessage()
+    message["From"] = config.FROM_ADDR
+    message["To"] = config.BUSINESS_EMAIL
+    message["Subject"] = f"New Quote Request from {data.username}"
+    message.set_content(build_email_body(data, submission_id))
 
-    service = build("gamil", "v1", credentials=credentials)
-
-    message = MIMEText(build_email_body(data, submission_id))
-    message["to"] = BUSINESS_EMAIL
-    message["subject"] = f"New Quote Request from {data.username}"
-
-    encoded = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    service.users().messages().send(userId="me", body={"raw": encoded}).execute()
+    # Port 465 = implicit TLS; anything else (e.g. 587) = STARTTLS upgrade.
+    use_tls = config.SMTP_PORT == 465
+    await aiosmtplib.send(
+        message,
+        hostname=config.SMTP_HOST,
+        port=config.SMTP_PORT,
+        username=config.SMTP_USER,
+        password=config.SMTP_PASS,
+        use_tls=use_tls,
+        start_tls=not use_tls,
+    )
 
 
 # ---- Endpoint --------------------------------------------------
@@ -422,19 +423,18 @@ async def submit_quote(request: Request, payload: QuoteSubmission) -> dict:
     Receives, validates, sanitises, stores, and emails a quote submission.
     Pydantic handles validation — a 422 is returned automatically on failure.
 
-    Email is still sent, whether or not the database updates.
+    Flow: validate -> store in Postgres -> notify the business by email.
+    The submission is persisted first; a failed notification email is logged
+    but does not fail the request, so a saved lead is never lost.
     """
-    try:
-        # send_gmail(payload)
-        logger.info("Email send successfully!")
-    except Exception as e:
-        logger.info(f"Email error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send confirmination email. Please try again later.",
-        )
-
     submission_id = await update_database(payload)
+
+    try:
+        await send_email(payload, submission_id)
+        logger.info(f"Notification email sent for {submission_id}")
+    except Exception as e:
+        logger.error(f"Email send failed for {submission_id}: {e}")
+
     return {
         "message": "Quote request received successfully.",
         "submission_id": submission_id,
