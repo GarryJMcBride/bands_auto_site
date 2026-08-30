@@ -21,6 +21,8 @@ Here are your **concise notes**:
   - Call Email API (Gmail/Outlook)
   - Honey pots used for bots
 * Email sent + optional calendar booking
+  - Sent as a `multipart/alternative` message: styled HTML (`build_email_html`) as the primary part, plain text (`build_email_body`) as the fallback part
+  - The mail client picks which part to render — HTML-capable clients show the styled version, anything that can't/won't render HTML (plaintext-only clients, some accessibility tools) automatically gets the plain-text part instead. No app-side branching needed; see `docs/development_journal.md` → "HTML email body + plain-text fallback for non-HTML recipients" for the full write-up
 
 
 ## Frontend Envato - Template Breakdown

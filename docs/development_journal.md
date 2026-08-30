@@ -550,7 +550,7 @@ The important work is done with honeypots, Rate limiting, validation, sanitizati
 2. **JS** (`transferFormInput.ts` → compiled `dist/transferFormInput.js`) — `submit` listener does `preventDefault()`, sanitises each field with DOMPurify, validates format/required-ness client-side (convenience only), then `fetch("/api/quote-javascript-pipeline", {method: "POST", body: JSON})`.
 3. **Python** (`app.py`, `POST /api/quote-javascript-pipeline`) — FastAPI parses the body into `QuoteSubmission` (Pydantic), which independently re-sanitises/re-validates every field (this is the real gate, not the JS). `submit_quote_javascript_pipeline()` then:
    - `save_submission()` — parameterized `INSERT` into `quote_submissions` via the `asyncpg` pool.
-   - `send_email()` — builds a plaintext message (`build_email_body`) and sends it with `aiosmtplib`, creds from `config.py`/`.env` (`SMTP_HOST/PORT/USER/PASS`, `FROM_ADDR`, `BUSINESS_EMAIL`).
+   - `send_email()` — builds a `multipart/alternative` message (styled HTML via `build_email_html` + plaintext via `build_email_body`, see "HTML email body + plain-text fallback" below) and sends it with `aiosmtplib`, creds from `config.py`/`.env` (`SMTP_HOST/PORT/USER/PASS`, `FROM_ADDR`, `BUSINESS_EMAIL`).
    - Returns `201` + `submission_id` only if both the DB write and the email send succeed; either failing raises a `500` (DB write happens first, so a failed send doesn't lose the saved lead).
 4. **Database** — single `quote_submissions` table. DDL (`CREATE_TABLE_SQL`) now runs automatically in `lifespan()` on app startup (previously wasn't wired up anywhere, so the table didn't exist).
 
@@ -587,6 +587,21 @@ mimetypes.add_type("text/javascript", ".mjs")
 Placed before the `/static` mount. This means the exact same code behaves identically on Windows, Linux, in CI, wherever — no dependency on what that machine's `mimetypes` happens to already know.
 
 **Real-world proof the no-JS fallback earns its keep:** by the time this MIME bug was discovered, several genuine test submissions (username "Garry") had already landed correctly in `quote_submissions` — sent *before* the bug above was even found or fixed. That's not a contradiction: the `POST /quote-python-pipeline` fallback and the form's `action="/quote-python-pipeline" method="post"` were already wired up by then. So the actual sequence was: click submit → the browser tries to run `transferFormInput.js` → it fails silently (this exact MIME bug, undiscovered at the time) → `preventDefault()` never runs → the browser falls through to its native form submission → which now had a real, working target instead of nowhere. The data never touched DOMPurify or `fetch` — it went in as plain form-urlencoded fields, validated and saved entirely server-side. Good demonstration of why the fallback is worth having as a genuinely independent path: the "enhanced" JS layer was silently dead the whole time, and the fallback caught it without anyone noticing until later.
+
+### HTML email body + plain-text fallback for non-HTML recipients
+
+The quote-notification email used to be `build_email_body()` — an all-plaintext `f"""..."""` string, i.e. raw field values dumped into the message with no formatting. Replaced with a styled version while keeping a fallback for recipients that can't (or won't) render HTML:
+
+- `build_email_html()` (`app.py`) — a table-based HTML layout (brand red `#df1e00` header, field table, footer with submission ID + timestamp) using **inline styles only**, no `<style>` block. This is a deliberate email-HTML constraint, not a stylistic choice: major clients (Outlook especially, but also Gmail's clipping/stripping behaviour) ignore or strip `<style>` tags and much of modern CSS (flexbox/grid, custom properties) in mail bodies — inline `style="..."` attributes on table cells is still the most reliably-supported approach across clients.
+- `build_email_body()` — kept as-is, the original plaintext version.
+- `send_email()` wires both together as a single MIME message:
+  ```python
+  message.set_content(build_email_body(data, submission_id))          # text/plain
+  message.add_alternative(build_email_html(data, submission_id), subtype="html")  # text/html
+  ```
+  `EmailMessage.set_content()` + `.add_alternative()` produces a `multipart/alternative` message containing both parts. This is standard MIME, not app-specific logic: the **mail client**, not this code, decides which part to render — an HTML-capable client shows the styled `text/html` part, anything that only understands plaintext (a terminal mail reader, some accessibility/screen-reader setups, viewing raw source) falls back to the `text/plain` part automatically. No conditional logic needed on the send side; the fallback is inherent to the MIME format.
+- Both parts read from the same sanitised `QuoteSubmission` fields (already `html.escape`'d by the Pydantic validators before this point), so values are interpolated into the HTML as-is — no double-escaping, and no injection risk since sanitisation already ran.
+- Verified by rendering `build_email_html()`'s output to a static file and viewing it in a real browser tab (via `claude-in-chrome`) rather than trusting the string concatenation — confirmed header colour, table layout, and `mailto:`/`tel:` links all render correctly.
 
 ### Still using a temporary mailbox, not a real ESP
 
