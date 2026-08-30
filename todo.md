@@ -384,6 +384,8 @@ Allow users to submit only a registration number and automatically retrieve vehi
 - [ ] Add an end-to-end test proving the no-JS `/quote-python-pipeline` fallback
   works and that it updates the server (DB row saved + email sent) the same as
   the JS pipeline does.
+- [ ] Add a test for the raw data email fall back when html is not avalibale
+- [ ] Add a test for receiving the HTML template
 
 ## 12. Email Delivery — Move off temporary Gmail mailbox to a proper ESP
 
