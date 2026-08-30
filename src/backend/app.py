@@ -42,6 +42,7 @@ from src.backend.routers import handle_form_inputs
 
 # Globals and Configurations
 # TODO: Use Pydantic settings instead to being ENV variables in
+# TODO: Check if this is still needed as config.py also does this
 load_dotenv()  # Load environment variables from .env file
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -362,7 +363,7 @@ async def save_submission(data: QuoteSubmission) -> str:
         return submission_id
 
 
-# ---- Email (SMTP via aiosmtplib) --------------------------------------------------
+# ---- Email Sending (SMTP) --------------------------------------------------
 
 
 def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
@@ -373,7 +374,7 @@ def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
     Name    : {data.username}
     Email   : {data.email}
     Phone   : {data.phone}
-    Registration   : {data.registration}
+    Registration   : {data.registration}Transport is async (aiosmtplib) and ful
     Service : {data.service.value}
 
     Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
@@ -383,9 +384,7 @@ def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
 async def send_email(data: QuoteSubmission, submission_id: str) -> None:
     """Send a quote-notification email to the business over SMTP.
 
-    Transport is async (aiosmtplib) and fully configured from the environment
-    (see config.py / .env), so switching the temporary Gmail app-password
-    mailbox for a proper ESP later requires no changes here.
+    Transport is async and fully configured from the environment file.
 
     Parameters
     ----------
@@ -393,6 +392,11 @@ async def send_email(data: QuoteSubmission, submission_id: str) -> None:
         Validated and sanitised submission data.
     submission_id : str
         UUID string identifying the stored submission.
+
+    Notes
+    -----
+    Switching the temporary "Gmail app-password mailbox" for a proper Email Sender Provider
+    later requires no changes here.
     """
     message = EmailMessage()
     message["From"] = config.FROM_ADDR
@@ -434,6 +438,10 @@ async def submit_quote(request: Request, payload: QuoteSubmission) -> dict:
         logger.info(f"Notification email sent for {submission_id}")
     except Exception as e:
         logger.error(f"Email send failed for {submission_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send confirmination email. Please try again later.",
+        )
 
     return {
         "message": "Quote request received successfully.",
