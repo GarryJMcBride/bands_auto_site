@@ -374,7 +374,7 @@ def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
     Name    : {data.username}
     Email   : {data.email}
     Phone   : {data.phone}
-    Registration   : {data.registration}Transport is async (aiosmtplib) and ful
+    Registration   : {data.registration}
     Service : {data.service.value}
 
     Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
