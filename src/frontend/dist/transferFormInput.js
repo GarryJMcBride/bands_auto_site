@@ -204,13 +204,13 @@ async function submitQuoteData(data, form) {
         if (!response.ok) {
             throw new Error(`Server error: ${response.status}`);
         }
-        showSubmitMessage(form, "success", "Thanks — we've received your request and will be in touch shortly.");
+        showSubmitMessage(form, "success", "Thanks! We will be in touch shortly.");
         form.reset(); // Data has served its purpose the moment the backend received it — don't linger.
         // Catch any network or server errors and log them. Show user a generic error message instead of details for security.
     }
     catch (err) {
         console.error("Error submitting quote request:", err);
-        showSubmitMessage(form, "error", "Sorry, something went wrong with your submission. Please check your details and try again.");
+        showSubmitMessage(form, "error", "Sorry, something went wrong. Please check your details and try again.");
     }
 }
 // ---- Initialise --------------------------------------------------
