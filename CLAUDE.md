@@ -48,7 +48,6 @@ Client-side validation is convenience only — the **backend is the source of tr
 
 **Backend layout (`src/backend/`):**
 - `app.py` — the live application: FastAPI app, CORS + `SecurityHeadersMiddleware`, `slowapi` rate limiting, the `QuoteSubmission` model with sanitisation (`sanitise` / `contains_injection`), asyncpg pool lifespan, `save_submission`, Gmail sending, and the `/api/quote` endpoint. **Most logic currently lives inline in this one file.**
-- `claude_arch.py` — a parallel/reference reimplementation of the same app; **not imported anywhere**. Treat as a design scratchpad, not production code.
 - `routers/handle_form_inputs.py`, `config.py`, `schemas.py`, `classes.py`, `_typing.py` — placeholder/empty modules that inline `app.py` logic is meant to be extracted into (the router is imported but `app.include_router` is commented out). Wiring these up is pending work.
 - `tests/test_db.py` — tests are entirely commented out.
 
