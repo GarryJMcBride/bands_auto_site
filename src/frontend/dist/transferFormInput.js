@@ -124,7 +124,7 @@ function handleQuoteFormSubmit(event) {
     }
     // If valid, clear any previous errors and submit the data
     clearErrors(form);
-    submitQuoteData(sanitisedData);
+    submitQuoteData(sanitisedData, form);
 }
 // ---- Error Display --------------------------------------------------
 /**
@@ -164,21 +164,38 @@ function clearErrors(form) {
     form.querySelectorAll(".form-error-message").forEach((el) => el.remove());
     form.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
 }
+// ---- Submission Feedback --------------------------------------------------
+// Fixed id so repeated submissions replace the previous message rather than stacking.
+// Uses the same "form-success-message"/"form-error-message" classes and position
+// (immediately before the <form>) as the server-rendered no-JS fallback banner
+// in index.html, so both paths look the same regardless of how they were reached.
+const SUBMIT_MESSAGE_ID = "quote-form-submit-message";
+function showSubmitMessage(form, type, message) {
+    clearSubmitMessage();
+    const messageEl = document.createElement("p");
+    messageEl.id = SUBMIT_MESSAGE_ID;
+    messageEl.className = type === "success" ? "form-success-message" : "form-error-message";
+    messageEl.textContent = message;
+    messageEl.setAttribute("role", "status");
+    form.insertAdjacentElement("beforebegin", messageEl);
+}
+function clearSubmitMessage() {
+    document.getElementById(SUBMIT_MESSAGE_ID)?.remove();
+}
 // ---- Data Submission --------------------------------------------------
 /**
  * Sends the validated quote data to the backend API using fetch.
- * Handles network errors and server responses, logging them for now.
- * In a real application, you would show success/error messages to the user instead of logging.
+ * Handles network errors and server responses, showing a message to the user either way.
  *
  * Note: The backend will also validate the data again for security, as frontend validation can be bypassed.
  *
  * @param data
+ * @param form
  */
-async function submitQuoteData(data) {
+async function submitQuoteData(data, form) {
     try {
         // fetch is used here to send the data to the backend API
-        // const response = await fetch("/api/quote", {
-        const response = await fetch("http://127.0.0.1:8000/api/quote", {
+        const response = await fetch("/api/quote", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -187,14 +204,13 @@ async function submitQuoteData(data) {
         if (!response.ok) {
             throw new Error(`Server error: ${response.status}`);
         }
-        // For demonstration, we log the response, show user a message instead
-        console.log("Quote request submitted successfully:", await response.json());
-        // TODO: Show success message to user, reset form, etc.
-        // Catch any network or server errors and log them. Show user a generic error message instead of details for security.  
+        showSubmitMessage(form, "success", "Thanks — we've received your request and will be in touch shortly.");
+        form.reset(); // Data has served its purpose the moment the backend received it — don't linger.
+        // Catch any network or server errors and log them. Show user a generic error message instead of details for security.
     }
     catch (err) {
         console.error("Error submitting quote request:", err);
-        // TODO: Show generic error message to user
+        showSubmitMessage(form, "error", "Sorry, something went wrong with your submission. Please check your details and try again.");
     }
 }
 // ---- Initialise --------------------------------------------------

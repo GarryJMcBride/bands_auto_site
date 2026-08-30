@@ -8,6 +8,7 @@ The application serves the homepage."""
 import os
 from dotenv import load_dotenv
 from enum import Enum
+import mimetypes
 import re
 import html
 from datetime import datetime, timezone
@@ -19,8 +20,8 @@ from pydantic import BaseModel, EmailStr, field_validator, model_validator
 import uuid
 
 from starlette.templating import Jinja2Templates
-from fastapi import FastAPI, Request, Response, status, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Response, status, HTTPException, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -76,6 +77,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
 
     logger.info("Database connection pool created")
+
+    # If any database schema setup is needed, it can be done here
+    async with db_pool.acquire() as conn:
+        await conn.execute(CREATE_TABLE_SQL)
+
+    logger.info("Database schema ensured (quote_submissions table)")
 
     yield
     await db_pool.close()
@@ -148,6 +155,14 @@ app.add_middleware(SecurityHeadersMiddleware)
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
 # Mount static files so FASTAPI can serve them to the browser
 # ---------------
+# .mjs isn't in every system's mimetypes registry (observed serving as text/plain on
+# Windows) — StaticFiles guesses Content-Type from this registry, and combined with
+# SecurityHeadersMiddleware's X-Content-Type-Options: nosniff, a wrong type makes the
+# browser silently refuse to execute it as a module. Register it explicitly so the
+# vendored DOMPurify build (static/js/vendor/dompurify/purify.es.mjs) always serves
+# with a real JS MIME type regardless of the host OS's registry.
+mimetypes.add_type("text/javascript", ".mjs")
+
 # Static assets (HTML, CSS, jQuery) and compiled TypeScript output are mounted separately
 app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
 app.mount("/dist", StaticFiles(directory="src/frontend/dist"), name="dist")
@@ -165,8 +180,14 @@ def read_homepage(request: Request) -> HTMLResponse:
 
     logging.info("Homepage accessed")
 
+    # Set by the no-JS form fallback (see submit_quote_form) after it redirects
+    # back here, so the page can show a plain-HTML success/error message.
+    submitted = request.query_params.get("submitted")
+
     # TODO: Implement Jinja for this
-    return templates.TemplateResponse(request=request, name="index.html")
+    return templates.TemplateResponse(
+        request=request, name="index.html", context={"submitted": submitted}
+    )
 
 
 # ---- Enums and Data Models --------------------------------------------------
@@ -289,12 +310,12 @@ class QuoteSubmission(BaseModel):
         v = sanitise(v).upper()
         if contains_injection(v):
             raise ValueError("Invalid characters in registration.")
-        if len(v) > 7:
+        if len(v.replace(" ", "")) > 7:
             raise ValueError("Registration must be 7 characters or fewer.")
         # UK format: AB12 CDE or AB12CDE
         if not re.match(r"^[A-Z]{2}[0-9]{2}\s?[A-Z]{3}$", v):
             raise ValueError("Invalid UK registration format (e.g. AB12 CDE).")
-        return v
+        return v.replace(" ", "")
 
     @field_validator("service")
     @classmethod
@@ -474,3 +495,48 @@ async def update_database(payload: QuoteSubmission) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save submission to the database. Please try again later.",
         )
+
+
+@app.post("/quote")
+@limiter.limit("5/minute")  # same limit as /api/quote — same endpoint, different transport
+async def submit_quote_form(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
+    registration: str = Form(...),
+    service: str = Form(...),
+) -> RedirectResponse:
+    """
+    No-JS fallback for the quote form.
+
+    transferFormInput.ts intercepts the form's submit event and POSTs JSON to
+    /api/quote instead — but that only happens if JavaScript ran. A browser
+    with JS disabled (or a page where the script failed to load) submits the
+    form natively instead, as normal form-urlencoded fields, to whatever the
+    <form>'s action/method are (see index.html). This endpoint is that target.
+
+    Reuses the same QuoteSubmission validation and save/email logic as
+    /api/quote; the only difference is redirecting back to the page instead
+    of returning JSON, since a plain HTML form submission expects a page in
+    response, not a JSON body.
+    """
+    try:
+        payload = QuoteSubmission(
+            username=username,
+            email=email,
+            phone=phone,
+            registration=registration,
+            service=service,
+        )
+        submission_id = await update_database(payload)
+        await send_email(payload, submission_id)
+    except Exception as e:
+        logger.error(f"No-JS quote submission failed: {e}")
+        return RedirectResponse(
+            url="/?submitted=error#booknow", status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    return RedirectResponse(
+        url="/?submitted=success#booknow", status_code=status.HTTP_303_SEE_OTHER
+    )
