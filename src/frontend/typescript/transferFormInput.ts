@@ -224,7 +224,7 @@ function clearSubmitMessage(): void {
 async function submitQuoteData(data: QuoteFormData, form: HTMLFormElement): Promise<void> {
   try {
     // fetch is used here to send the data to the backend API
-    const response = await fetch("/api/quote", {
+    const response = await fetch("/api/quote-javascript-pipeline", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

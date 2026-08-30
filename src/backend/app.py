@@ -180,7 +180,7 @@ def read_homepage(request: Request) -> HTMLResponse:
 
     logging.info("Homepage accessed")
 
-    # Set by the no-JS form fallback (see submit_quote_form) after it redirects
+    # Set by the no-JS form fallback (see submit_quote_python_pipeline) after it redirects
     # back here, so the page can show a plain-HTML success/error message.
     submitted = request.query_params.get("submitted")
 
@@ -441,16 +441,38 @@ async def send_email(data: QuoteSubmission, submission_id: str) -> None:
 # ---- Endpoint --------------------------------------------------
 
 
-@app.post("/api/quote", status_code=status.HTTP_201_CREATED)
+@app.post("/api/quote-javascript-pipeline", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")  # max 5 submissions per IP per minute
-async def submit_quote(request: Request, payload: QuoteSubmission) -> dict:
-    """
-    Receives, validates, sanitises, stores, and emails a quote submission.
-    Pydantic handles validation — a 422 is returned automatically on failure.
+async def submit_quote_javascript_pipeline(request: Request, payload: QuoteSubmission) -> dict:
+    """Receive, validate, store, and email a quote submission (JSON path).
 
-    Flow: validate -> store in Postgres -> notify the business by email.
-    The submission is persisted first; a failed notification email is logged
-    but does not fail the request, so a saved lead is never lost.
+    Called by transferFormInput.ts via fetch() when JavaScript is available.
+    Pydantic handles validation on `payload` — a 422 is returned automatically
+    on failure, before this function body ever runs.
+
+    Flow: validate -> store in Postgres -> notify the business by email. The
+    submission is persisted first, so a failed notification email never loses
+    a saved lead.
+
+    Parameters
+    ----------
+    request : Request
+        Not used directly in the function body — required as the first
+        parameter so `@limiter.limit` can key rate limiting off the caller's
+        IP address.
+    payload : QuoteSubmission
+        The validated, sanitised submission data.
+
+    Returns
+    -------
+    dict
+        A success message and the generated `submission_id`.
+
+    Raises
+    ------
+    HTTPException
+        500 if the confirmation email fails to send after the submission was
+        already stored.
     """
     submission_id = await update_database(payload)
 
@@ -468,6 +490,74 @@ async def submit_quote(request: Request, payload: QuoteSubmission) -> dict:
         "message": "Quote request received successfully.",
         "submission_id": submission_id,
     }
+
+
+@app.post("/quote-python-pipeline")
+@limiter.limit(
+    "5/minute"
+)  # same limit as /api/quote-javascript-pipeline — same endpoint, different transport
+async def submit_quote_python_pipeline(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
+    registration: str = Form(...),
+    service: str = Form(...),
+) -> RedirectResponse:
+    """Receive, validate, store, and email a quote submission (no-JS path).
+
+    transferFormInput.ts intercepts the form's submit event and POSTs JSON to
+    /api/quote-javascript-pipeline instead — but that only happens if
+    JavaScript ran. A browser with JS disabled (or a page where the script
+    failed to load) submits the form natively instead, as normal
+    form-urlencoded fields, to whatever the <form>'s action/method are (see
+    index.html). This endpoint is that target.
+
+    Reuses the same QuoteSubmission validation and save/email logic as
+    /api/quote-javascript-pipeline; the only difference is redirecting back
+    to the page instead of returning JSON, since a plain HTML form submission
+    expects a page in response, not a JSON body.
+
+    Parameters
+    ----------
+    request : Request
+        Not used directly in the function body — required as the first
+        parameter so `@limiter.limit` can key rate limiting off the caller's
+        IP address.
+    username, email, phone, registration, service : str
+        Raw form-urlencoded fields, unvalidated until passed into
+        `QuoteSubmission` below.
+
+    Returns
+    -------
+    RedirectResponse
+        303 redirect to `/?submitted=success#booknow` on success, or
+        `/?submitted=error#booknow` if validation, storage, or email sending
+        failed — errors are swallowed here rather than raised, since a plain
+        HTML form submission has no way to render a JSON error response.
+    """
+    try:
+        payload = QuoteSubmission(
+            username=username,
+            email=email,
+            phone=phone,
+            registration=registration,
+            service=service,
+        )
+        submission_id = await update_database(payload)
+        await send_email(payload, submission_id)
+    except Exception as e:
+        logger.error(f"No-JS quote submission failed: {e}")
+        return RedirectResponse(
+            url="/?submitted=error#booknow", status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    return RedirectResponse(
+        url="/?submitted=success#booknow", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+# ---- Database Operations --------------------------------------------------
 
 
 async def update_database(payload: QuoteSubmission) -> str:
@@ -495,48 +585,3 @@ async def update_database(payload: QuoteSubmission) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save submission to the database. Please try again later.",
         )
-
-
-@app.post("/quote")
-@limiter.limit("5/minute")  # same limit as /api/quote — same endpoint, different transport
-async def submit_quote_form(
-    request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
-    registration: str = Form(...),
-    service: str = Form(...),
-) -> RedirectResponse:
-    """
-    No-JS fallback for the quote form.
-
-    transferFormInput.ts intercepts the form's submit event and POSTs JSON to
-    /api/quote instead — but that only happens if JavaScript ran. A browser
-    with JS disabled (or a page where the script failed to load) submits the
-    form natively instead, as normal form-urlencoded fields, to whatever the
-    <form>'s action/method are (see index.html). This endpoint is that target.
-
-    Reuses the same QuoteSubmission validation and save/email logic as
-    /api/quote; the only difference is redirecting back to the page instead
-    of returning JSON, since a plain HTML form submission expects a page in
-    response, not a JSON body.
-    """
-    try:
-        payload = QuoteSubmission(
-            username=username,
-            email=email,
-            phone=phone,
-            registration=registration,
-            service=service,
-        )
-        submission_id = await update_database(payload)
-        await send_email(payload, submission_id)
-    except Exception as e:
-        logger.error(f"No-JS quote submission failed: {e}")
-        return RedirectResponse(
-            url="/?submitted=error#booknow", status_code=status.HTTP_303_SEE_OTHER
-        )
-
-    return RedirectResponse(
-        url="/?submitted=success#booknow", status_code=status.HTTP_303_SEE_OTHER
-    )

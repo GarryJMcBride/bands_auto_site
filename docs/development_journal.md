@@ -293,19 +293,19 @@ They’re not using your UI. They’re talking directly to FastAPI. Hackers do n
 #### Data Validation and Security - Python
 #### Data Validation and Security - JavaScript
 
-**Does the frontend's architecture affect backend security? No.** `/api/quote` is a public endpoint — it can't tell whether a request came from `transferFormInput.ts`, curl, or Postman, so nothing about the frontend's structure, framework, or even its presence changes what `QuoteSubmission`'s validators, `sanitise()`/`contains_injection()`, or the `slowapi` rate limiter do. They run identically on every request regardless of origin.
+**Does the frontend's architecture affect backend security? No.** `/api/quote-javascript-pipeline` is a public endpoint — it can't tell whether a request came from `transferFormInput.ts`, curl, or Postman, so nothing about the frontend's structure, framework, or even its presence changes what `QuoteSubmission`'s validators, `sanitise()`/`contains_injection()`, or the `slowapi` rate limiter do. They run identically on every request regardless of origin.
 
 **Does the form work with JS disabled?** It didn't, until now. `#quote-form` had no `action`/`method`, so with the JS listener gone the browser fell back to its default native submission — a `GET /` with every field appended as a query string, which FastAPI's `/` route just ignores. Nothing reached the database or the email step; a no-JS user could not submit the form at all (annoying, but not a security hole — see above).
 
 **Fix — progressive enhancement (`app.py` + `index.html`):**
-- `#quote-form` now has `action="/quote" method="post"`, a real fallback target for a native browser POST.
-- New `POST /quote` endpoint accepts the fields as `Form(...)` (needs the `python-multipart` package — added via `uv add python-multipart`), builds the same `QuoteSubmission`, and reuses `update_database()`/`send_email()` unchanged. Since a plain HTML form expects a page back, not JSON, it redirects (`303`) to `/?submitted=success#booknow` or `/?submitted=error#booknow` instead of returning a JSON body.
+- `#quote-form` now has `action="/quote-python-pipeline" method="post"`, a real fallback target for a native browser POST.
+- New `POST /quote-python-pipeline` endpoint accepts the fields as `Form(...)` (needs the `python-multipart` package — added via `uv add python-multipart`), builds the same `QuoteSubmission`, and reuses `update_database()`/`send_email()` unchanged. Since a plain HTML form expects a page back, not JSON, it redirects (`303`) to `/?submitted=success#booknow` or `/?submitted=error#booknow` instead of returning a JSON body.
 - `read_homepage()` reads that `?submitted=` query param and passes it to the template, which shows a plain `<p class="form-success-message">`/`<p class="form-error-message">` banner above the form (same unstyled-for-now convention as the JS's existing per-field `.form-error-message` spans).
-- `/api/quote` (JSON, used by `transferFormInput.ts` when JS runs) is untouched — `/quote` is a separate, parallel path for the no-JS case only.
+- `/api/quote-javascript-pipeline` (JSON, used by `transferFormInput.ts` when JS runs) is untouched — `/quote-python-pipeline` is a separate, parallel path for the no-JS case only.
 
 **How would a malicious user actually attack this?** Exactly as guessed: skip the page and the JS entirely and POST straight at the endpoint —
 ```bash
-curl -X POST http://localhost:8000/api/quote \
+curl -X POST http://localhost:8000/api/quote-javascript-pipeline \
   -H "Content-Type: application/json" \
   -d '{"username":"...","email":"...","phone":"...","registration":"...","service":"Tyres"}'
 ```
@@ -547,8 +547,8 @@ The important work is done with honeypots, Rate limiting, validation, sanitizati
 ### Pipeline (as built)
 
 1. **HTML** — `#quote-form` (`index.html`, `novalidate`) holds the raw fields: `username`, `email`, `phone`, `registration`, `service`.
-2. **JS** (`transferFormInput.ts` → compiled `dist/transferFormInput.js`) — `submit` listener does `preventDefault()`, sanitises each field with DOMPurify, validates format/required-ness client-side (convenience only), then `fetch("/api/quote", {method: "POST", body: JSON})`.
-3. **Python** (`app.py`, `POST /api/quote`) — FastAPI parses the body into `QuoteSubmission` (Pydantic), which independently re-sanitises/re-validates every field (this is the real gate, not the JS). `submit_quote()` then:
+2. **JS** (`transferFormInput.ts` → compiled `dist/transferFormInput.js`) — `submit` listener does `preventDefault()`, sanitises each field with DOMPurify, validates format/required-ness client-side (convenience only), then `fetch("/api/quote-javascript-pipeline", {method: "POST", body: JSON})`.
+3. **Python** (`app.py`, `POST /api/quote-javascript-pipeline`) — FastAPI parses the body into `QuoteSubmission` (Pydantic), which independently re-sanitises/re-validates every field (this is the real gate, not the JS). `submit_quote_javascript_pipeline()` then:
    - `save_submission()` — parameterized `INSERT` into `quote_submissions` via the `asyncpg` pool.
    - `send_email()` — builds a plaintext message (`build_email_body`) and sends it with `aiosmtplib`, creds from `config.py`/`.env` (`SMTP_HOST/PORT/USER/PASS`, `FROM_ADDR`, `BUSINESS_EMAIL`).
    - Returns `201` + `submission_id` only if both the DB write and the email send succeed; either failing raises a `500` (DB write happens first, so a failed send doesn't lose the saved lead).
@@ -571,7 +571,7 @@ Fix: treat DOMPurify like the rest of this repo's third-party JS (jQuery, Owl Ca
 
 ### Second DOMPurify gotcha: `.mjs` served with the wrong MIME type
 
-Fixing the missing vendor file above wasn't the whole story — even with the file present, the browser refused to run it, and *every* form submission in testing was silently hitting the no-JS `/quote` fallback instead of the JS `fetch` path, for a completely different reason.
+Fixing the missing vendor file above wasn't the whole story — even with the file present, the browser refused to run it, and *every* form submission in testing was silently hitting the no-JS `/quote-python-pipeline` fallback instead of the JS `fetch` path, for a completely different reason.
 
 **Why MIME types matter for JS/modules at all:** every HTTP response includes a `Content-Type` header (e.g. `text/css`, `image/png`, `application/javascript`) telling the browser what kind of content it just downloaded, so it knows how to handle it. A `<script>` tag doesn't care much about the exact value as long as it's *some* JS-flavoured type — but `<script type="module">` (and `import`/`import()`) is stricter: the spec requires the response to be one of a specific allow-list of JavaScript MIME types, or the module load is rejected outright, with no code ever running. `text/plain`, `application/octet-stream`, etc. are not on that list.
 
@@ -586,7 +586,7 @@ mimetypes.add_type("text/javascript", ".mjs")
 ```
 Placed before the `/static` mount. This means the exact same code behaves identically on Windows, Linux, in CI, wherever — no dependency on what that machine's `mimetypes` happens to already know.
 
-**Real-world proof the no-JS fallback earns its keep:** by the time this MIME bug was discovered, several genuine test submissions (username "Garry") had already landed correctly in `quote_submissions` — sent *before* the bug above was even found or fixed. That's not a contradiction: the `POST /quote` fallback and the form's `action="/quote" method="post"` were already wired up by then. So the actual sequence was: click submit → the browser tries to run `transferFormInput.js` → it fails silently (this exact MIME bug, undiscovered at the time) → `preventDefault()` never runs → the browser falls through to its native form submission → which now had a real, working target instead of nowhere. The data never touched DOMPurify or `fetch` — it went in as plain form-urlencoded fields, validated and saved entirely server-side. Good demonstration of why the fallback is worth having as a genuinely independent path: the "enhanced" JS layer was silently dead the whole time, and the fallback caught it without anyone noticing until later.
+**Real-world proof the no-JS fallback earns its keep:** by the time this MIME bug was discovered, several genuine test submissions (username "Garry") had already landed correctly in `quote_submissions` — sent *before* the bug above was even found or fixed. That's not a contradiction: the `POST /quote-python-pipeline` fallback and the form's `action="/quote-python-pipeline" method="post"` were already wired up by then. So the actual sequence was: click submit → the browser tries to run `transferFormInput.js` → it fails silently (this exact MIME bug, undiscovered at the time) → `preventDefault()` never runs → the browser falls through to its native form submission → which now had a real, working target instead of nowhere. The data never touched DOMPurify or `fetch` — it went in as plain form-urlencoded fields, validated and saved entirely server-side. Good demonstration of why the fallback is worth having as a genuinely independent path: the "enhanced" JS layer was silently dead the whole time, and the fallback caught it without anyone noticing until later.
 
 ### Still using a temporary mailbox, not a real ESP
 

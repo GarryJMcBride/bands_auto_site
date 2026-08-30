@@ -303,9 +303,9 @@
                                     <p class="form-error-message">Sorry, something went wrong with your submission. Please check your details and try again.</p>
                                     {% endif %}
                                     <!-- Novalidate is to turn off validation for the form - Frontend and Backend will handle validation -->
-                                    <!-- action/method are the no-JS fallback target (POST /quote); transferFormInput.ts
-                                         intercepts submit and posts JSON to /api/quote instead when JS is available -->
-                                    <form id="quote-form" novalidate action="/quote" method="post">
+                                    <!-- action/method are the no-JS fallback target (POST /quote-python-pipeline); transferFormInput.ts
+                                         intercepts submit and posts JSON to /api/quote-javascript-pipeline instead when JS is available -->
+                                    <form id="quote-form" novalidate action="/quote-python-pipeline" method="post">
                                         <div class="form-group">
                                             <div class="field-inner">
                                                 <input type="text" name="username" value="" placeholder="Your Name"
