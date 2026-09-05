@@ -5,63 +5,29 @@ template rendering, and the primary endpoints for the B&S Autos web application.
 
 The application serves the homepage."""
 
-import os
-from dotenv import load_dotenv
-from enum import Enum
 import mimetypes
-import re
-import html
-from datetime import datetime, timezone
-
-from typing import AsyncGenerator
 import logging
+from typing import AsyncGenerator
 from contextlib import asynccontextmanager
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
-import uuid
 
+from dotenv import load_dotenv
 from starlette.templating import Jinja2Templates
-from fastapi import FastAPI, Request, Response, status, HTTPException, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from starlette.middleware.base import BaseHTTPMiddleware
-
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-import asyncpg
-
-# Async, native-Python SMTP transport (replaces the old Gmail API client).
-import aiosmtplib
-from email.message import EmailMessage
-
-from src.backend import config
+from src.backend import config, schemas
+from src.backend.classes import db, SecurityHeadersMiddleware
 from src.backend.routers import handle_form_inputs
-
 
 # Globals and Configurations
 # TODO: Use Pydantic settings instead to being ENV variables in
-# TODO: Check if this is still needed as config.py also does this
 load_dotenv()  # Load environment variables from .env file
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-# TODO: Configure ALLOWED_ORIGINS
-# ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(
-#     ","
-# )  # Comma-separated list of allowed origins for CORS
-# SMTP / email settings live in config.py (loaded from .env).
-DEBUG = os.getenv("ENVIRONMENT") == "development"
-
-
-db_pool = None
-
-# ---- Logger Config --------------------------------------------------
-
-# TODO: Move this to config.py and bring in
-# Logging setup
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ---- FastAPI Config --------------------------------------------------
@@ -71,29 +37,20 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan function to manage startup and shutdown events for the FastAPI application."""
-    global db_pool
-
-    # Use A client for PostgreSQL - asyncpg - TODO: Move file and bring in connection to Database from else where
-    db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+    await db.connect()
 
     logger.info("Database connection pool created")
 
     # If any database schema setup is needed, it can be done here
-    async with db_pool.acquire() as conn:
-        await conn.execute(CREATE_TABLE_SQL)
+    await db.ensure_schema(schemas.CREATE_TABLE_SQL)
 
     logger.info("Database schema ensured (quote_submissions table)")
 
     yield
-    await db_pool.close()
+    await db.close()
 
     logger.info("Database connection pool closed")
 
-
-# Rate Limiter for API endpoints - Security and traffic management
-# ---------------
-# Controls the number of requests to an API or server within a specific timeframe
-limiter = Limiter(key_func=get_remote_address, default_limits=["5/hour"])
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -108,7 +65,7 @@ app = FastAPI(
 )
 
 # Attach the rate limiter to the FastAPI app
-app.state.limiter = limiter
+app.state.limiter = config.limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ---- Middleware & Security Config --------------------------------------------------
@@ -121,36 +78,12 @@ app.add_middleware(
     allow_headers=["Content-Type"],  # only this header is permitted
 )
 
-
-# Custom middleware to add security headers to all responses
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Middleware to add security headers to all responses.
-
-    This middleware enhances security by adding headers that prevent MIME type sniffing,
-    clickjacking, and cross-site scripting (XSS) attacks.
-
-    Headers added:
-    - X-Content-Type-Options: nosniff
-    - X-Frame-Options: DENY
-    - X-XSS-Protection: 1; mode=block
-    """
-
-    # Add security headers to all responses to enhance security against common web vulnerabilities
-    async def dispatch(self, request: Request, call_next) -> Response:
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        return response
-
-
 app.add_middleware(SecurityHeadersMiddleware)
 
 
 # ---- Endpoints, Routers and Static Files --------------------------------------------------
 
-# Routers TODO: Uncomment when moving components to other files
-# app.include_router(handle_form_inputs.router)
+app.include_router(handle_form_inputs.router)
 
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
 # Mount static files so FASTAPI can serve them to the browser
@@ -178,7 +111,7 @@ templates = Jinja2Templates(directory="src/frontend/templates/")
 def read_homepage(request: Request) -> HTMLResponse:
     """Renders the homepage template."""
 
-    logging.info("Homepage accessed")
+    logger.info("Homepage accessed")
 
     # Set by the no-JS form fallback (see submit_quote_python_pipeline) after it redirects
     # back here, so the page can show a plain-HTML success/error message.
@@ -188,506 +121,3 @@ def read_homepage(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request, name="index.html", context={"submitted": submitted}
     )
-
-
-# ---- Enums and Data Models --------------------------------------------------
-
-
-class Service(str, Enum):
-    diagnostics = "Diagnostics"
-    tyres = "Tyres"
-    servicing = "Servicing"
-    batteries = "Batteries"
-    exhausts = "Exhausts"
-    repairs = "Repairs"
-
-
-# ---- Sanitisation  --------------------------------------------------
-
-# Patterns that suggest injection attempts
-INJECTION_PATTERNS = [
-    r"<[^>]*>",  # HTML/XML tags
-    r"javascript\s*:",  # JS protocol
-    r"on\w+\s*=",  # HTML event handlers (onclick= etc)
-    r"(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE)\s",  # SQL keywords
-    r"(\$\{|\{\{)",  # Template injection
-    r"(\.\.\/|\.\.\\)",  # Path traversal
-    r"(eval|exec|system|passthru)\s*\(",  # Command injection
-]
-
-
-def contains_injection(value: str) -> bool:
-    """Return True if the value contains any known injection pattern.
-
-    Parameters
-    ----------
-    value: str
-        Patterns defined in the INJECTION_PATTERNS
-
-    Returns
-    -------
-    bool : True or False
-        If True the pattern does contain injection pattern
-        If False the pattern does not contain injection patterns
-    """
-    for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, value, re.IGNORECASE):
-            return True
-    return False
-
-
-def sanitise(value: str) -> str:
-    """Function to sanitise data if any characters that are not convential to simple
-    form input.
-
-    - Strip leading/trailing whitespace
-    - Remove control characters
-    - Escape HTML entities
-    - Strip any remaining HTML tags
-
-    Parameters
-    ----------
-    value : str
-
-    Returns
-    -------
-
-    """
-    value = value.strip()
-    value = re.sub(r"[\x00-\x1F\x7F]", "", value)  # remove control characters
-    value = html.escape(value)  # encode & < > " '
-    value = re.sub(r"<[^>]*>", "", value)  # strip remaining tags
-    return value
-
-
-# ---- Pydantic Schema --------------------------------------------------
-
-
-# TODO: Find out why these functions are within a pydantic schema
-class QuoteSubmission(BaseModel):
-    username: str
-    email: EmailStr
-    phone: str
-    registration: str
-    service: Service
-
-    @field_validator("username")
-    @classmethod
-    def validate_username(cls, v: str) -> str:
-        v = sanitise(v)
-        if contains_injection(v):
-            raise ValueError("Invalid characters in name.")
-        if not re.match(r"^[a-zA-Z\s'\-]{2,64}$", v):
-            raise ValueError("Name must be 2–64 characters, letters only.")
-        return v
-
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, v: str) -> str:
-        v = sanitise(v).lower()
-        if contains_injection(v):
-            raise ValueError("Invalid characters in email.")
-        if len(v) > 254:
-            raise ValueError("Email must be 254 characters or fewer.")
-        # EmailStr from Pydantic already validates format, so we just return the sanitized value
-        return v
-
-    @field_validator("phone")
-    @classmethod
-    def validate_phone(cls, v: str) -> str:
-        v = sanitise(v)
-        if contains_injection(v):
-            raise ValueError("Invalid characters in phone number.")
-        if not re.match(r"^\+?[0-9\s\-\(\)]{7,20}$", v):
-            raise ValueError(
-                "Phone number must be 7-20 digits, may include +, spaces, - or ()."
-            )
-        return v
-
-    @field_validator("registration")
-    @classmethod
-    def validate_registration(cls, v: str) -> str:
-        v = sanitise(v).upper()
-        if contains_injection(v):
-            raise ValueError("Invalid characters in registration.")
-        if len(v.replace(" ", "")) > 7:
-            raise ValueError("Registration must be 7 characters or fewer.")
-        # UK format: AB12 CDE or AB12CDE
-        if not re.match(r"^[A-Z]{2}[0-9]{2}\s?[A-Z]{3}$", v):
-            raise ValueError("Invalid UK registration format (e.g. AB12 CDE).")
-        return v.replace(" ", "")
-
-    @field_validator("service")
-    @classmethod
-    def validate_service(cls, v: str) -> str:
-        # Enum already enforces the whitelist — this adds injection check
-        if contains_injection(v):
-            raise ValueError("Invalid service selection.")
-        return v
-
-    @model_validator(mode="after")
-    def check_no_field_is_blank(self) -> "QuoteSubmission":
-        """Belt-and-braces: ensure nothing slipped through as empty."""
-        for field, value in self.__dict__.items():
-            if isinstance(value, str) and not value.strip():
-                raise ValueError(f"{field} must not be empty.")
-        return self
-
-
-# ---- Database Schema --------------------------------------------------
-
-CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS quote_submissions (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username    VARCHAR(64)  NOT NULL,
-    email       VARCHAR(254) NOT NULL,
-    phone       VARCHAR(20)  NOT NULL,
-    registration VARCHAR(7)   NOT NULL,
-    service     VARCHAR(50)  NOT NULL,
-    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-"""
-
-
-async def save_submission(data: QuoteSubmission) -> str:
-    """Insert a quote submission into the database PostgreSQL.
-
-    Uses parameterized queries — no string concatenation, no SQL injection risk.
-    Returns the generated UUID for the record.
-
-    Parameters
-    ----------
-    data : QuoteSubmission
-        The validated and sanitised quote submission data.
-
-    Returns
-    -------
-    str
-        The UUID of the newly created quote submission record.
-
-    """
-    submission_id = str(uuid.uuid4())
-    async with db_pool.acquire() as conn:
-        await conn.execute(
-            """
-            INSERT INTO quote_submissions (id, username, email, phone, registration, service, submitted_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            """,
-            submission_id,
-            data.username,
-            data.email,
-            data.phone,
-            data.registration,
-            data.service.value,
-            datetime.now(timezone.utc),
-        )
-        return submission_id
-
-
-# ---- Email Sending (SMTP) --------------------------------------------------
-
-
-def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
-    """Build the plain-text part of the quote-notification email.
-
-    Paired with `build_email_html` in `send_email`, which attaches both as a
-    `multipart/alternative` message via `EmailMessage.set_content()` (this text
-    part) + `.add_alternative()` (the HTML part). Deciding which part to show is
-    entirely up to the receiving mail client, not this code: HTML-capable clients
-    (Gmail, Outlook, Apple Mail, etc.) render the styled `build_email_html` part
-    and never show this one, while clients that can't or won't render HTML — a
-    plain-text mail reader, some accessibility/screen-reader setups, or a person
-    viewing raw message source — fall back to this part automatically. That
-    fallback is standard MIME behaviour, so no conditional logic is needed here.
-
-    Parameters
-    ----------
-    data : QuoteSubmission
-        Validated and sanitised submission data.
-    submission_id : str
-        UUID string identifying the stored submission.
-
-    Returns
-    -------
-    str
-        Plain-text email body.
-    """
-    return f"""
-    New Quote Request — {submission_id}
-
-    Name    : {data.username}
-    Email   : {data.email}
-    Phone   : {data.phone}
-    Registration   : {data.registration}
-    Service : {data.service.value}
-
-    Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
-    """
-
-
-def build_email_html(data: QuoteSubmission, submission_id: str) -> str:
-    """Build the HTML part of the quote-notification email.
-
-    Table-based layout with inline styles only — mail clients (Outlook/Gmail in
-    particular) strip <style> blocks and ignore modern CSS, so nothing here can
-    rely on a stylesheet.
-
-    Paired with `build_email_body` in `send_email`, which attaches both as a
-    `multipart/alternative` message via `EmailMessage.set_content()` (the plain-
-    text part) + `.add_alternative()` (this HTML part). This part is the one
-    HTML-capable clients (Gmail, Outlook, Apple Mail, etc.) render; the plain-
-    text part from `build_email_body` is the fallback shown by anything that
-    can't or won't render HTML — the mail client picks automatically, per
-    standard MIME rules, so no conditional logic is needed here.
-
-    Parameters
-    ----------
-    data : QuoteSubmission
-        Validated and sanitised submission data. Field values are already
-        sanitised/HTML-escaped by the `QuoteSubmission` validators, so they're
-        interpolated into the markup as-is (no double-escaping).
-    submission_id : str
-        UUID string identifying the stored submission.
-
-    Returns
-    -------
-    str
-        HTML email body.
-    """
-    submitted_at = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
-    rows = "".join(
-        f"""
-        <tr>
-          <td style="padding:12px 16px;border-bottom:1px solid #eee;color:#777;font-size:13px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;">{label}</td>
-          <td style="padding:12px 16px;border-bottom:1px solid #eee;color:#222;font-size:15px;">{value}</td>
-        </tr>"""
-        for label, value in (
-            ("Name", data.username),
-            ("Email", f'<a href="mailto:{data.email}" style="color:#df1e00;text-decoration:none;">{data.email}</a>'),
-            ("Phone", f'<a href="tel:{data.phone}" style="color:#df1e00;text-decoration:none;">{data.phone}</a>'),
-            ("Registration", data.registration),
-            ("Service", data.service.value),
-        )
-    )
-
-    return f"""\
-<!DOCTYPE html>
-<html>
-  <body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:24px 0;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:6px;overflow:hidden;">
-            <tr>
-              <td style="background-color:#df1e00;padding:20px 24px;">
-                <span style="color:#ffffff;font-size:20px;font-weight:bold;">B&amp;S Autos</span>
-                <span style="color:#ffe5df;font-size:13px;float:right;line-height:28px;">New Quote Request</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:24px;">
-                <p style="margin:0 0 16px;color:#333;font-size:15px;">A new quote request came in through the website:</p>
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:4px;overflow:hidden;">
-                  {rows}
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 24px 24px;">
-                <p style="margin:0;color:#999;font-size:12px;">Submission ID: {submission_id}</p>
-                <p style="margin:4px 0 0;color:#999;font-size:12px;">Submitted at: {submitted_at}</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-"""
-
-
-async def send_email(data: QuoteSubmission, submission_id: str) -> None:
-    """Send a quote-notification email to the business over SMTP.
-
-    Transport is async and fully configured from the environment file.
-
-    Parameters
-    ----------
-    data : QuoteSubmission
-        Validated and sanitised submission data.
-    submission_id : str
-        UUID string identifying the stored submission.
-
-    Notes
-    -----
-    Switching the temporary "Gmail app-password mailbox" for a proper Email Sender Provider
-    later requires no changes here.
-    """
-    message = EmailMessage()
-    message["From"] = config.FROM_ADDR
-    message["To"] = config.BUSINESS_EMAIL
-    message["Subject"] = f"New Quote Request from {data.username}"
-    message.set_content(build_email_body(data, submission_id))
-    message.add_alternative(build_email_html(data, submission_id), subtype="html")
-
-    # Port 465 = implicit TLS; anything else (e.g. 587) = STARTTLS upgrade.
-    use_tls = config.SMTP_PORT == 465
-    await aiosmtplib.send(
-        message,
-        hostname=config.SMTP_HOST,
-        port=config.SMTP_PORT,
-        username=config.SMTP_USER,
-        password=config.SMTP_PASS,
-        use_tls=use_tls,
-        start_tls=not use_tls,
-    )
-
-
-# ---- Endpoint --------------------------------------------------
-
-
-@app.post("/api/quote-javascript-pipeline", status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")  # max 5 submissions per IP per minute
-async def submit_quote_javascript_pipeline(request: Request, payload: QuoteSubmission) -> dict:
-    """Receive, validate, store, and email a quote submission (JSON path).
-
-    Called by transferFormInput.ts via fetch() when JavaScript is available.
-    Pydantic handles validation on `payload` — a 422 is returned automatically
-    on failure, before this function body ever runs.
-
-    Flow: validate -> store in Postgres -> notify the business by email. The
-    submission is persisted first, so a failed notification email never loses
-    a saved lead.
-
-    Parameters
-    ----------
-    request : Request
-        Not used directly in the function body — required as the first
-        parameter so `@limiter.limit` can key rate limiting off the caller's
-        IP address.
-    payload : QuoteSubmission
-        The validated, sanitised submission data.
-
-    Returns
-    -------
-    dict
-        A success message and the generated `submission_id`.
-
-    Raises
-    ------
-    HTTPException
-        500 if the confirmation email fails to send after the submission was
-        already stored.
-    """
-    submission_id = await update_database(payload)
-
-    try:
-        await send_email(payload, submission_id)
-        logger.info(f"Notification email sent for {submission_id}")
-    except Exception as e:
-        logger.error(f"Email send failed for {submission_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send confirmination email. Please try again later.",
-        )
-
-    return {
-        "message": "Quote request received successfully.",
-        "submission_id": submission_id,
-    }
-
-
-@app.post("/quote-python-pipeline")
-@limiter.limit(
-    "5/minute"
-)  # same limit as /api/quote-javascript-pipeline — same endpoint, different transport
-async def submit_quote_python_pipeline(
-    request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
-    registration: str = Form(...),
-    service: str = Form(...),
-) -> RedirectResponse:
-    """Receive, validate, store, and email a quote submission (no-JS path).
-
-    transferFormInput.ts intercepts the form's submit event and POSTs JSON to
-    /api/quote-javascript-pipeline instead — but that only happens if
-    JavaScript ran. A browser with JS disabled (or a page where the script
-    failed to load) submits the form natively instead, as normal
-    form-urlencoded fields, to whatever the <form>'s action/method are (see
-    index.html). This endpoint is that target.
-
-    Reuses the same QuoteSubmission validation and save/email logic as
-    /api/quote-javascript-pipeline; the only difference is redirecting back
-    to the page instead of returning JSON, since a plain HTML form submission
-    expects a page in response, not a JSON body.
-
-    Parameters
-    ----------
-    request : Request
-        Not used directly in the function body — required as the first
-        parameter so `@limiter.limit` can key rate limiting off the caller's
-        IP address.
-    username, email, phone, registration, service : str
-        Raw form-urlencoded fields, unvalidated until passed into
-        `QuoteSubmission` below.
-
-    Returns
-    -------
-    RedirectResponse
-        303 redirect to `/?submitted=success#booknow` on success, or
-        `/?submitted=error#booknow` if validation, storage, or email sending
-        failed — errors are swallowed here rather than raised, since a plain
-        HTML form submission has no way to render a JSON error response.
-    """
-    try:
-        payload = QuoteSubmission(
-            username=username,
-            email=email,
-            phone=phone,
-            registration=registration,
-            service=service,
-        )
-        submission_id = await update_database(payload)
-        await send_email(payload, submission_id)
-    except Exception as e:
-        logger.error(f"No-JS quote submission failed: {e}")
-        return RedirectResponse(
-            url="/?submitted=error#booknow", status_code=status.HTTP_303_SEE_OTHER
-        )
-
-    return RedirectResponse(
-        url="/?submitted=success#booknow", status_code=status.HTTP_303_SEE_OTHER
-    )
-
-
-# ---- Database Operations --------------------------------------------------
-
-
-async def update_database(payload: QuoteSubmission) -> str:
-    """Updates the Database with the submission by the users.
-
-    Takes save submission and receives SubmissionID.
-
-    Parameters
-    ----------
-        payload : QuoteSubmission
-            The data wrapped in pydantic class
-
-    Returns
-    -------
-        submission_id : str
-            The UUID of the newly created quote submission record
-    """
-    try:
-        submission_id = await save_submission(payload)
-        logger.info(f"Submission saved: {submission_id}")
-        return submission_id
-    except asyncpg.PostgresError as e:
-        logger.error(f"Database error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save submission to the database. Please try again later.",
-        )
