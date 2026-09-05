@@ -152,7 +152,7 @@ Built upon top of **Linoor** template, this repo uses mostly static `JavaScript 
 
 It does not include any dependencies through `NPM (Node Package Manager)`. However any `JavaScript` functionality or libraries from this point onwards implemented by myself will use `NPM` as static files can become out of date quickly, and require much more manual handling.
 
-TODO: Implement Architecture over view for Form submission
+See `docs/pipeline-architecture.md` for the full quote-submission pipeline diagram and module-by-module breakdown (frontend form → JS/no-JS split → validation → DB → email).
 
 ## Tools Used for Development - Table of Contents
 
