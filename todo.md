@@ -210,6 +210,13 @@
 
 Allow users to submit only a registration number and automatically retrieve vehicle details.
 
+**Design doc:** `docs/vehicle-info-lookup-plan.md` — full file-by-file plan for
+using the existing `registration` field to call DVLA's Vehicle Enquiry Service
++ DVSA's MOT History API server-side and append the results to the DB row and
+the notification email. Includes verified live API specs (endpoints, auth,
+error codes) as of Sept 2026. Not implemented yet — deferred, picking this up
+another day.
+
 ### Tasks
 
 * [ ] Build form:
@@ -217,7 +224,7 @@ Allow users to submit only a registration number and automatically retrieve vehi
   * Input: vehicle registration only
   * Keep UX minimal (per client request)
 
-* [ ] Backend integration:
+* [ ] Backend integration — see `docs/vehicle-info-lookup-plan.md`:
 
   * Call external API to fetch vehicle data
   * Process and validate response
