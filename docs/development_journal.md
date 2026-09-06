@@ -582,6 +582,7 @@ Fixing the missing vendor file above wasn't the whole story — even with the fi
 **Fix** (`app.py`): register the MIME type explicitly, once, at startup, so it doesn't depend on the host OS's registry at all:
 ```python
 import mimetypes
+
 mimetypes.add_type("text/javascript", ".mjs")
 ```
 Placed before the `/static` mount. This means the exact same code behaves identically on Windows, Linux, in CI, wherever — no dependency on what that machine's `mimetypes` happens to already know.
@@ -592,12 +593,14 @@ Placed before the `/static` mount. This means the exact same code behaves identi
 
 The quote-notification email used to be `build_email_body()` — an all-plaintext `f"""..."""` string, i.e. raw field values dumped into the message with no formatting. Replaced with a styled version while keeping a fallback for recipients that can't (or won't) render HTML:
 
-- `build_email_html()` (`app.py`) — a table-based HTML layout (brand red `#df1e00` header, field table, footer with submission ID + timestamp) using **inline styles only**, no `<style>` block. This is a deliberate email-HTML constraint, not a stylistic choice: major clients (Outlook especially, but also Gmail's clipping/stripping behaviour) ignore or strip `<style>` tags and much of modern CSS (flexbox/grid, custom properties) in mail bodies — inline `style="..."` attributes on table cells is still the most reliably-supported approach across clients.
+- `build_email_html()` (`app.py`) — a table-based HTML layout (brand red `#ff0000` header, field table, footer with submission ID + timestamp) using **inline styles only**, no `<style>` block. This is a deliberate email-HTML constraint, not a stylistic choice: major clients (Outlook especially, but also Gmail's clipping/stripping behaviour) ignore or strip `<style>` tags and much of modern CSS (flexbox/grid, custom properties) in mail bodies — inline `style="..."` attributes on table cells is still the most reliably-supported approach across clients.
 - `build_email_body()` — kept as-is, the original plaintext version.
 - `send_email()` wires both together as a single MIME message:
   ```python
-  message.set_content(build_email_body(data, submission_id))          # text/plain
-  message.add_alternative(build_email_html(data, submission_id), subtype="html")  # text/html
+  message.set_content(build_email_body(data, submission_id))  # text/plain
+  message.add_alternative(
+      build_email_html(data, submission_id), subtype="html"
+  )  # text/html
   ```
   `EmailMessage.set_content()` + `.add_alternative()` produces a `multipart/alternative` message containing both parts. This is standard MIME, not app-specific logic: the **mail client**, not this code, decides which part to render — an HTML-capable client shows the styled `text/html` part, anything that only understands plaintext (a terminal mail reader, some accessibility/screen-reader setups, viewing raw source) falls back to the `text/plain` part automatically. No conditional logic needed on the send side; the fallback is inherent to the MIME format.
 - Both parts read from the same sanitised `QuoteSubmission` fields (already `html.escape`'d by the Pydantic validators before this point), so values are interpolated into the HTML as-is — no double-escaping, and no injection risk since sanitisation already ran.
@@ -610,4 +613,31 @@ Email currently goes out over `smtp.gmail.com` using a personal Gmail account + 
 A real Email Service Provider (Resend / Amazon SES, per the comments already in `config.py`/`.env`) is more robust and secure than relaying through a personal Gmail account:
 - Scoped API key / SMTP credential instead of a personal mailbox password.
 - Proper domain verification (SPF/DKIM/DMARC) so mail reliably lands in the inbox instead of getting bounced or spam-filtered (Gmail's relay is picky about the `From` domain matching the authenticated account — already bit us once).
-- `send_email()` was written provider-agnostic on purpose, so this swap should only touch `.env`, not `app.py`. See `todo.md` → `## 12. Email Delivery` for the concrete steps.
+- `send_email()` was written provider-agnostic on purpose, so this swap should only touch `.env`, not `app.py`. See `todo.md` → `## 12. Emai         Delivery` for the concrete steps.
+
+### Implementing images to the html email file
+
+Wanted the B&S Autos logo (`bands_logo_no_scroll.png`) in the red header banner of `build_email_html()`, but a plain `<img src="static/images/bands_logo_no_scroll.png">` — the pattern used everywhere else in `index.html` — doesn't work here. That path only resolves because a *browser* is loading it from this app's own `/static` mount at `http://this-host/static/...`. An email travels over raw SMTP to an arbitrary mail client on the recipient's machine, which has no concept of this app's server or its static mount at all — a relative path resolves to nothing, and even the full `https://` URL would depend on the site being publicly deployed and reachable, which it isn't yet in dev.
+
+The fix is to embed the image *inside* the email itself as a MIME part, referenced from the HTML by a `Content-ID` instead of a URL — the same mechanism every "logo in the email header" you've ever received actually uses:
+
+```python
+message.set_content(build_email_body(data, submission_id))
+message.add_alternative(build_email_html(data, submission_id), subtype="html")
+html_part = message.get_payload()[1]
+html_part.add_related(
+    LOGO_PATH.read_bytes(), maintype="image", subtype="png", cid=f"<{LOGO_CID}>"
+)
+```
+and in the HTML:
+```html
+<img src="cid:bands-logo-header" alt="B&amp;S Autos" height="28">
+```
+
+Things worth remembering about this:
+- `add_related()` must be called on the **html sub-part** (`message.get_payload()[1]`), not on the top-level `message`. Calling it on the top level would attach the image as a separate top-level `multipart/mixed` attachment (a normal file attachment) instead of nesting it as `multipart/related` inside the html branch of the `multipart/alternative` — which is what actually makes a bare `cid:` reference resolve inside that html body.
+- The `Content-ID` header value needs angle brackets (`<bands-logo-header>`), but the `cid:` reference in the `<img src>` does not (`cid:bands-logo-header`) — this is RFC 2392 syntax, easy to get backwards. Verified by building the message with stdlib `email.message.EmailMessage` and inspecting `message.as_string()` directly rather than trusting it blind — confirmed `Content-ID: <bands-logo-header>`, `Content-Type: image/png`, and `Content-Disposition: inline` all show up in the right place before wiring it into `send_email()`.
+- Chose CID embedding over hosting the image at a real URL once deployed, even though that would also work: CID-embedded images render immediately in Gmail/Outlook/Apple Mail with no click-through, since they're already part of the downloaded message rather than a remote fetch the client may block by default ("images are hidden — display images below?"). It also means the email doesn't silently break if the image is ever moved/renamed on the live site after being sent.
+- `LOGO_PATH` is resolved once with `pathlib.Path(__file__).resolve().parent.parent / "frontend" / "static" / "images" / "bands_logo_no_scroll.png"` — reading the file happens lazily inside `send_email()`, not at import time, so `build_email_html()` stays a pure string-building function with no file I/O of its own.
+
+See `todo.md` → `## 11. Tests` — an automated test asserting the CID/image part shows up in the built message is still outstanding.

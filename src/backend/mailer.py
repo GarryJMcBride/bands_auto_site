@@ -8,11 +8,28 @@ over SMTP via aiosmtplib.
 
 from datetime import datetime, timezone
 from email.message import EmailMessage
+from pathlib import Path
 
 import aiosmtplib
 
 from src.backend import config
 from src.backend.schemas import QuoteSubmission
+
+# The email header logo is sent as an inline CID attachment (see `send_email`),
+# not a plain <img src="static/images/...">. This message travels over raw SMTP
+# to an arbitrary mail client, not a browser with access to this app's /static
+# mount, so a relative or site-relative path resolves to nothing on the
+# recipient's end. Embedding the image as a MIME part referenced by Content-ID
+# also renders immediately in Gmail/Outlook without the "load remote images?"
+# prompt a normal http(s):// <img> would trigger.
+LOGO_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "frontend"
+    / "static"
+    / "images"
+    / "bands_logo_on_scroll.png"
+)
+LOGO_CID = "bands-logo-header"
 
 
 def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
@@ -91,8 +108,14 @@ def build_email_html(data: QuoteSubmission, submission_id: str) -> str:
         </tr>"""
         for label, value in (
             ("Name", data.username),
-            ("Email", f'<a href="mailto:{data.email}" style="color:#df1e00;text-decoration:none;">{data.email}</a>'),
-            ("Phone", f'<a href="tel:{data.phone}" style="color:#df1e00;text-decoration:none;">{data.phone}</a>'),
+            (
+                "Email",
+                f'<a href="mailto:{data.email}" style="color:#ff0000;text-decoration:none;">{data.email}</a>',
+            ),
+            (
+                "Phone",
+                f'<a href="tel:{data.phone}" style="color:#ff0000;text-decoration:none;">{data.phone}</a>',
+            ),
             ("Registration", data.registration),
             ("Service", data.service.value),
         )
@@ -101,14 +124,17 @@ def build_email_html(data: QuoteSubmission, submission_id: str) -> str:
     return f"""\
 <!DOCTYPE html>
 <html>
-  <body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:24px 0;">
+  <body style="margin:0;padding:0;background-color:#000000;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:24px 0;">
       <tr>
         <td align="center">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:6px;overflow:hidden;">
             <tr>
-              <td style="background-color:#df1e00;padding:20px 24px;">
-                <span style="color:#ffffff;font-size:20px;font-weight:bold;">B&amp;S Autos</span>
+              <td style="background-color:#ff0000;padding:20px 24px;">
+                <!-- src="cid:{LOGO_CID}" matches the Content-ID `send_email` attaches this
+                     part under via `add_related` — the mail client resolves it to the
+                     inline image part, not a network fetch. -->
+                <img src="cid:{LOGO_CID}" alt="B&amp;S Autos" height="28" style="display:inline-block;vertical-align:middle;border:0;">
                 <span style="color:#ffe5df;font-size:13px;float:right;line-height:28px;">New Quote Request</span>
               </td>
             </tr>
@@ -158,6 +184,15 @@ async def send_email(data: QuoteSubmission, submission_id: str) -> None:
     message["Subject"] = f"New Quote Request from {data.username}"
     message.set_content(build_email_body(data, submission_id))
     message.add_alternative(build_email_html(data, submission_id), subtype="html")
+
+    # Attach the logo to the *html* sub-part (not the top-level message) so it
+    # becomes multipart/related nested inside the multipart/alternative html
+    # branch — this is what makes `cid:` resolve inside that html body specifically,
+    # rather than showing up as a separate top-level attachment on the email.
+    html_part = message.get_payload()[1]
+    html_part.add_related(
+        LOGO_PATH.read_bytes(), maintype="image", subtype="png", cid=f"<{LOGO_CID}>"
+    )
 
     # Port 465 = implicit TLS; anything else (e.g. 587) = STARTTLS upgrade.
     use_tls = config.SMTP_PORT == 465

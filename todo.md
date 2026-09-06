@@ -115,10 +115,10 @@
   * TS + bundler workflow
   * Whether HTML should directly reference scripts or bundled output
   * Strategy for handling legacy jQuery files
-* [ ] Fix DOMPurify's non-bundled setup — currently manually copied from
+* [ ] Fix DOMPurify`s non-bundled setup — currently manually copied from
   `node_modules/dompurify/dist/purify.es.mjs` to
   `static/js/vendor/dompurify/purify.es.mjs` and wired via an import map in
-  `index.html`, because there's no bundler to resolve `node_modules` packages
+  `index.html`, because there`s no bundler to resolve `node_modules` packages
   for the browser. Fragile (already broke once when the vendor file went
   missing and silently killed the whole form-handling module — see
   `Development_journal.md` → `## Email Sending pipeline`). A bundler would let
@@ -348,13 +348,13 @@ Allow users to submit only a registration number and automatically retrieve vehi
 ## 10. Security
 
 * [ ] Add honeypot field or rate limiting on the form endpoint to stop spam
-      - Add a honeypot field to the form schema (hidden field bots fill in, humans don't —
+      - Add a honeypot field to the form schema (hidden field bots fill in, humans don`t —
         reject silently if populated).
       - Add IP-based rate limiting on the submission endpoint (e.g. via `slowapi` or
-        equivalent — check what's already in the project's dependencies first).
-* [ ] Fix `slowapi`'s IP detection for production: `get_remote_address` (`app.py`)
+        equivalent — check what`s already in the project`s dependencies first).
+* [ ] Fix `slowapi``s IP detection for production: `get_remote_address` (`app.py`)
       reads the direct peer IP. Once behind a reverse proxy/load balancer for TLS
-      termination, every request will appear to come from the proxy's IP unless
+      termination, every request will appear to come from the proxy`s IP unless
       `X-Forwarded-For` is explicitly trusted — silently turning the per-IP rate
       limit into one shared global limit. Needs fixing once deployment topology
       (which reverse proxy, how many hops) is known.
@@ -386,6 +386,7 @@ Allow users to submit only a registration number and automatically retrieve vehi
   the JS pipeline does.
 - [ ] Add a test for the raw data email fall back when html is not avalibale
 - [ ] Add a test for receiving the HTML template
+- [ ] Add a test for testing that images render in the html email
 
 ## 12. Email Delivery — Move off temporary Gmail mailbox to a proper ESP
 
@@ -398,13 +399,13 @@ Allow users to submit only a registration number and automatically retrieve vehi
     (or an API-key based ESP client if not doing SMTP relay).
 * [ ] Fix `FROM_ADDR` — must be an address the sending provider is actually
   authorised to send as (domain-verified), not an arbitrary personal address.
-  Gmail's relay will reject/bounce/spam-filter mail otherwise.
+  Gmail`s relay will reject/bounce/spam-filter mail otherwise.
 * [ ] Set up domain verification (SPF / DKIM / DMARC) for whatever domain
   `FROM_ADDR` uses once on a real ESP — needed for reliable inbox delivery,
-  not just "the send call didn't error."
+  not just "the send call didn`t error."
 * [ ] Decide final `BUSINESS_EMAIL` (currently pointed at the same temporary
   test mailbox) once ready to go live.
 * [ ] An ESP is also more secure than a personal Gmail app password long-term —
   scoped API keys instead of a mailbox credential, provider-side deliverability/
-  spam handling, and no dependency on one person's personal Google account.
+  spam handling, and no dependency on one person`s personal Google account.
 
