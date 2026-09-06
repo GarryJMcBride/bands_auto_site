@@ -62,4 +62,5 @@ class Database:
 
 # Module-level singleton — constructed at import time, but `db.pool` stays None
 # until `Database.connect()` is awaited from the FastAPI lifespan.
+# TODO: why is this defined here as well as inside config.py? Should we just import the config.db instead of creating a new one here?
 db = Database(config.DATABASE_URL)

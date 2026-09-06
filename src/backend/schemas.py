@@ -7,74 +7,15 @@ entities in the application.
 They ensure that incoming data is validated and structured correctly before being processed by the application logic."""
 
 import re
-import html
 
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 from src.backend._typing import Service
-
-# ---- Sanitisation  --------------------------------------------------
-
-# Patterns that suggest injection attempts
-INJECTION_PATTERNS = [
-    r"<[^>]*>",  # HTML/XML tags
-    r"javascript\s*:",  # JS protocol
-    r"on\w+\s*=",  # HTML event handlers (onclick= etc)
-    r"(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE)\s",  # SQL keywords
-    r"(\$\{|\{\{)",  # Template injection
-    r"(\.\.\/|\.\.\\)",  # Path traversal
-    r"(eval|exec|system|passthru)\s*\(",  # Command injection
-]
-
-
-def contains_injection(value: str) -> bool:
-    """Return True if the value contains any known injection pattern.
-
-    Parameters
-    ----------
-    value: str
-        Patterns defined in the INJECTION_PATTERNS
-
-    Returns
-    -------
-    bool : True or False
-        If True the pattern does contain injection pattern
-        If False the pattern does not contain injection patterns
-    """
-    for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, value, re.IGNORECASE):
-            return True
-    return False
-
-
-def sanitise(value: str) -> str:
-    """Function to sanitise data if any characters that are not convential to simple
-    form input.
-
-    - Strip leading/trailing whitespace
-    - Remove control characters
-    - Escape HTML entities
-    - Strip any remaining HTML tags
-
-    Parameters
-    ----------
-    value : str
-
-    Returns
-    -------
-
-    """
-    value = value.strip()
-    value = re.sub(r"[\x00-\x1F\x7F]", "", value)  # remove control characters
-    value = html.escape(value)  # encode & < > " '
-    value = re.sub(r"<[^>]*>", "", value)  # strip remaining tags
-    return value
-
+from src.backend.validation import contains_injection, sanitise
 
 # ---- Pydantic Schema --------------------------------------------------
 
 
-# TODO: Find out why these functions are within a pydantic schema
 class QuoteSubmission(BaseModel):
     username: str
     email: EmailStr

@@ -3,8 +3,8 @@
 This documents the current, live request pipeline for the "request a quote" form (`#quote-form` in
 `src/frontend/templates/index.html`), from browser submit through to email notification. It reflects
 the backend as modularized into `src/backend/config.py`, `_typing.py`, `classes.py`, `schemas.py`,
-`mailer.py`, and `routers/handle_form_inputs.py` — `app.py` itself is now just app wiring (FastAPI
-instance, middleware, static mounts, lifespan, and the `GET /` homepage route).
+`validation.py`, `mailer.py`, and `routers/handle_form_inputs.py` — `app.py` itself is now just app
+wiring (FastAPI instance, middleware, static mounts, lifespan, and the `GET /` homepage route).
 
 ## Diagram
 
@@ -30,7 +30,7 @@ flowchart TD
     FETCH --> EP1["submit_quote_javascript_pipeline()<br/>(routers/handle_form_inputs.py)<br/>@limiter.limit('5/minute')"]
     FORMPOST --> EP2["submit_quote_python_pipeline()<br/>(routers/handle_form_inputs.py)<br/>@limiter.limit('5/minute')"]
 
-    EP1 --> QS["QuoteSubmission(**payload)<br/>Pydantic model + field_validators<br/>(schemas.py) — sanitise() + contains_injection()<br/>+ regex checks (name/email/phone/UK reg/service)"]
+    EP1 --> QS["QuoteSubmission(**payload)<br/>Pydantic model + field_validators<br/>(schemas.py) — calls sanitise() + contains_injection()<br/>from validation.py + regex checks (name/email/phone/UK reg/service)"]
     EP2 --> QS
 
     QS -->|validation fails| ERR1["JS path: FastAPI 422<br/>(automatic, before endpoint body runs)"]
@@ -63,7 +63,8 @@ flowchart TD
 | Config | `src/backend/config.py` | Env-loaded settings (`DATABASE_URL`, `DEBUG`, SMTP/email vars), the module logger, and the shared `limiter` (`slowapi.Limiter`) instance — defined here (a dependency-free leaf module) so both `app.py` and the router can import the same instance without a circular import. |
 | Shared classes | `src/backend/classes.py` | `SecurityHeadersMiddleware` (adds `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection` to every response) and `Database` — a thin asyncpg pool wrapper (`connect()`, `close()`, `ensure_schema()`), exposed as the `db` singleton that `routers/handle_form_inputs.py` also imports. |
 | Types | `src/backend/_typing.py` | The `Service` enum (`Diagnostics`, `Tyres`, `Servicing`, `Batteries`, `Exhausts`, `Repairs`). |
-| Validation & schema | `src/backend/schemas.py` | `sanitise()` / `contains_injection()` helpers, the `QuoteSubmission` Pydantic model (per-field validators + a `model_validator` belt-and-braces blank check), and `CREATE_TABLE_SQL` (the `quote_submissions` table DDL, executed once at lifespan startup). |
+| Sanitisation | `src/backend/validation.py` | `sanitise()` / `contains_injection()` (+ `INJECTION_PATTERNS`) — generic, form-agnostic helpers with no knowledge of `QuoteSubmission`, so any future form's Pydantic model can import and reuse them unchanged. |
+| Schema | `src/backend/schemas.py` | The `QuoteSubmission` Pydantic model (per-field validators, calling into `validation.py`, + a `model_validator` belt-and-braces blank check), and `CREATE_TABLE_SQL` (the `quote_submissions` table DDL, executed once at lifespan startup). |
 | Endpoints | `src/backend/routers/handle_form_inputs.py` | `save_submission()` (parameterized INSERT via `db.pool.acquire()`), `update_database()` (wraps `asyncpg.PostgresError` as an `HTTPException(500)`), and both POST endpoints — `submit_quote_javascript_pipeline` (JSON, `201` / `HTTPException`) and `submit_quote_python_pipeline` (form fields, `303` redirect either way). |
 | Email | `src/backend/mailer.py` | `build_email_body()` (plain text), `build_email_html()` (styled inline-CSS table), `send_email()` — assembles a `multipart/alternative` `EmailMessage` and sends it via `aiosmtplib.send()` using `config`'s SMTP settings. |
 

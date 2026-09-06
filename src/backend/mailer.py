@@ -6,7 +6,7 @@ validated QuoteSubmission, and sends them as a multipart/alternative message
 over SMTP via aiosmtplib.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.message import EmailMessage
 from pathlib import Path
 
@@ -66,7 +66,7 @@ def build_email_body(data: QuoteSubmission, submission_id: str) -> str:
     Registration   : {data.registration}
     Service : {data.service.value}
 
-    Submitted at: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} UTC
+    Submitted at: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} UTC
     """
 
 
@@ -99,7 +99,7 @@ def build_email_html(data: QuoteSubmission, submission_id: str) -> str:
     str
         HTML email body.
     """
-    submitted_at = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
+    submitted_at = datetime.now(UTC).strftime("%d %b %Y, %H:%M UTC")
     rows = "".join(
         f"""
         <tr>

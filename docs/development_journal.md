@@ -641,3 +641,15 @@ Things worth remembering about this:
 - `LOGO_PATH` is resolved once with `pathlib.Path(__file__).resolve().parent.parent / "frontend" / "static" / "images" / "bands_logo_no_scroll.png"` — reading the file happens lazily inside `send_email()`, not at import time, so `build_email_html()` stays a pure string-building function with no file I/O of its own.
 
 See `todo.md` → `## 11. Tests` — an automated test asserting the CID/image part shows up in the built message is still outstanding.
+
+## Splitting sanitisation out of schemas.py into validation.py
+
+`schemas.py` had carried a `# TODO: Find out why these functions are within a pydantic schema` comment since early on, sitting right above `QuoteSubmission`. `INJECTION_PATTERNS`, `contains_injection()`, and `sanitise()` lived in the same file as the Pydantic model, called from inside its `field_validator`s.
+
+That was fine while there was exactly one form and one Pydantic model in the whole app. It stops being fine once a second form gets hooked up (planned soon) and, further out, once this FastAPI backend gets reused as a starting point for other client sites — the goal being explicit reuse across projects, not just across forms in this one repo.
+
+**The distinction that matters:** `sanitise()`/`contains_injection()` know nothing about `QuoteSubmission` — they operate on plain strings and have no opinion about names, emails, or vehicle registrations. `QuoteSubmission` itself, by contrast, is entirely specific to this one form on this one site. Keeping them in the same file meant you couldn't reuse one without dragging the other along — a new form's schema, or a copy of this repo for a different client, would have to either duplicate the sanitisation functions or import them out of a file that's conceptually "just this site's form model."
+
+**Fix:** moved `INJECTION_PATTERNS`, `contains_injection()`, and `sanitise()` verbatim into a new `src/backend/validation.py`, with `schemas.py` now just `from src.backend.validation import contains_injection, sanitise` and calling them from its `field_validator`s exactly as before. `schemas.py` is left holding only `QuoteSubmission` (the domain-specific model) and `CREATE_TABLE_SQL` (the DB DDL) — no logic changes, pure move + import update, verified by re-running a `QuoteSubmission(...)` construction and importing `src.backend.app` afterwards to confirm nothing else referenced the old location (nothing did — `sanitise`/`contains_injection` were only ever imported from within `schemas.py` itself).
+
+The `# TODO` comment is gone — this was the answer to it. See `docs/pipeline-architecture-visual-diagram.md` for the updated module table (now a separate "Sanitisation" row for `validation.py` alongside "Schema" for `schemas.py`).
