@@ -42,6 +42,11 @@
   * `ruff` (linting)
   * `pylance` (type checking / IntelliSense)
 
+### Documentation
+
+* [ ] Add MkDocs for project documentation (build `docs/` — `architecture.md`,
+  `development_journal.md`, `site_content.md` — into a browsable static site)
+
 ### Static Assets
 
 * [ ] Move `/images` into FastAPI `static/` directory
@@ -54,6 +59,10 @@
 ### Add Error handling from the server to the frontend
 
 [ ] Implement warnings on the frontend from the server for HTTPExceptions
+
+### Update "Quote" to "Book"
+
+[ ] Change all reference to "Quote" for the "Book in now" submission, its called "Quote" from the template, not its use case on B&S Autos
 
 ## 2. Frontend Architecture (JavaScript / TypeScript)
 
@@ -110,6 +119,14 @@
   * TS + bundler workflow
   * Whether HTML should directly reference scripts or bundled output
   * Strategy for handling legacy jQuery files
+* [ ] Fix DOMPurify`s non-bundled setup — currently manually copied from
+  `node_modules/dompurify/dist/purify.es.mjs` to
+  `static/js/vendor/dompurify/purify.es.mjs` and wired via an import map in
+  `index.html`, because there`s no bundler to resolve `node_modules` packages
+  for the browser. Fragile (already broke once when the vendor file went
+  missing and silently killed the whole form-handling module — see
+  `Development_journal.md` → `## Email Sending pipeline`). A bundler would let
+  `import DOMPurify from "dompurify"` just work off `npm install`.
 
 ---
 
@@ -142,6 +159,7 @@
 
   * Handle alias resolution
   * Produce browser-ready assets
+  * Would remove the manual DOMPurify vendoring workaround (see section 3)
 
 * [ ] Validate full pipeline:
 
@@ -278,6 +296,9 @@ Allow users to submit only a registration number and automatically retrieve vehi
 * [ ] Networking:
 
   * Multiple sites on port 443 (via reverse proxy like Nginx)
+  * TLS termination, HSTS, and Content-Security-Policy headers — these belong at
+    the reverse proxy/CDN layer (Nginx/Cloudflare), not in `app.py`. Not yet set
+    up anywhere; needed before going live.
 
 * [ ] Future scalability:
 
@@ -303,6 +324,10 @@ Allow users to submit only a registration number and automatically retrieve vehi
 
   * Show success/failure messages clearly
   * Prevent duplicate submissions
+  * Harden the `?submitted=success|error` banner on `/` (no-JS fallback, `app.py`):
+    currently a plain query param anyone can set without submitting anything —
+    purely cosmetic today, but should move to a signed/session-based flash
+    message if this ever needs to mean more than "show a message"
 
 ### Behaviour & Edge Cases
 
@@ -327,10 +352,20 @@ Allow users to submit only a registration number and automatically retrieve vehi
 ## 10. Security
 
 * [ ] Add honeypot field or rate limiting on the form endpoint to stop spam
-      - Add a honeypot field to the form schema (hidden field bots fill in, humans don't —
+      - Add a honeypot field to the form schema (hidden field bots fill in, humans don`t —
         reject silently if populated).
       - Add IP-based rate limiting on the submission endpoint (e.g. via `slowapi` or
-        equivalent — check what's already in the project's dependencies first).
+        equivalent — check what`s already in the project`s dependencies first).
+* [ ] Fix `slowapi``s IP detection for production: `get_remote_address` (`app.py`)
+      reads the direct peer IP. Once behind a reverse proxy/load balancer for TLS
+      termination, every request will appear to come from the proxy`s IP unless
+      `X-Forwarded-For` is explicitly trusted — silently turning the per-IP rate
+      limit into one shared global limit. Needs fixing once deployment topology
+      (which reverse proxy, how many hops) is known.
+* [ ] Rotate credentials in `.env` before going live — real DB password and Gmail
+      app password currently in there are the ones used throughout local dev/
+      debugging (some were even echoed into chat sessions while troubleshooting).
+      Generate fresh ones for production.
 * [ ] Try to Penetrate Site with Scripts and other methods
 * [ ] Scan Browser console for any passwords or risky data exposure
 * [ ] Check out OWASP or other security methods defined by industry professionals
@@ -346,4 +381,35 @@ Allow users to submit only a registration number and automatically retrieve vehi
   temporary SMTP config and asserts no exception is raised.
 - Write unit tests for the Pydantic validation (reject injection attempts, reject
   honeypot-filled submissions, accept valid submissions).
+- [ ] Add a test for a user entering a space in the vehicle registration field —
+  decide whether to strip/normalise it or reject it outright, then test that
+  behaviour (client-side regex in `transferFormInput.ts` and the backend
+  `field_validator` in `app.py` both need to agree on the rule).
+- [ ] Add an end-to-end test proving the no-JS `/quote-python-pipeline` fallback
+  works and that it updates the server (DB row saved + email sent) the same as
+  the JS pipeline does.
+- [ ] Add a test for the raw data email fall back when html is not avalibale
+- [ ] Add a test for receiving the HTML template
+- [ ] Add a test for testing that images render in the html email
+
+## 12. Email Delivery — Move off temporary Gmail mailbox to a proper ESP
+
+* [ ] Replace the temporary Gmail app-password mailbox (`SMTP_HOST=smtp.gmail.com`
+  in `.env`, used only to prove the SMTP send pipeline works end-to-end) with a
+  real Email Service Provider (e.g. Resend or Amazon SES).
+  * By design this should only touch `.env` — `send_email()` in `app.py` is
+    written provider-agnostic (see comment in `config.py`), so no code changes
+    should be needed, only new `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`
+    (or an API-key based ESP client if not doing SMTP relay).
+* [ ] Fix `FROM_ADDR` — must be an address the sending provider is actually
+  authorised to send as (domain-verified), not an arbitrary personal address.
+  Gmail`s relay will reject/bounce/spam-filter mail otherwise.
+* [ ] Set up domain verification (SPF / DKIM / DMARC) for whatever domain
+  `FROM_ADDR` uses once on a real ESP — needed for reliable inbox delivery,
+  not just "the send call didn`t error."
+* [ ] Decide final `BUSINESS_EMAIL` (currently pointed at the same temporary
+  test mailbox) once ready to go live.
+* [ ] An ESP is also more secure than a personal Gmail app password long-term —
+  scoped API keys instead of a mailbox credential, provider-side deliverability/
+  spam handling, and no dependency on one person`s personal Google account.
 

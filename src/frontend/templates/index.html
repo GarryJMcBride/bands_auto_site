@@ -57,9 +57,9 @@
                     <!--Logo-->
                     <div class="logo-box">
                         <div class="logo"><a href="index.html" title="B&S Autos - Mobile Mechanic"><img
-                                    src="static/images/logo-2.png" class="main-logo"
+                                    src="static/images/bands_logo_no_scroll.png" class="main-logo"
                                     alt="B&S Autos - Mobile Mechanic"
-                                    title="B&S Autos - Mobile Mechanic"><img src="static/images/logo.png"
+                                    title="B&S Autos - Mobile Mechanic"><img src="static/images/bands_logo_on_scroll.png"
                                     id="thm-logo" alt="B&S Autos - Mobile Mechanic"
                                     title="B&S Autos - Mobile Mechanic" class="stricked-logo"></a></div>
                     </div>
@@ -297,8 +297,15 @@
                             <div class="form-box wow fadeInRight" data-wow-delay="0ms" data-wow-duration="1500ms">
                                 <div class="default-form">
                                     <h4>Your Information<span>.</span></h4>
+                                    {% if submitted == "success" %}
+                                    <p class="form-success-message">Thanks! We will be in touch shortly.</p>
+                                    {% elif submitted == "error" %}
+                                    <p class="form-error-message">Sorry, something went wrong. Please check your details and try again.</p>
+                                    {% endif %}
                                     <!-- Novalidate is to turn off validation for the form - Frontend and Backend will handle validation -->
-                                    <form id="quote-form" novalidate>
+                                    <!-- action/method are the no-JS fallback target (POST /quote-python-pipeline); transferFormInput.ts
+                                         intercepts submit and posts JSON to /api/quote-javascript-pipeline instead when JS is available -->
+                                    <form id="quote-form" novalidate action="/quote-python-pipeline" method="post">
                                         <div class="form-group">
                                             <div class="field-inner">
                                                 <input type="text" name="username" value="" placeholder="Your Name"
@@ -330,7 +337,7 @@
                                                     <!-- added value="" so FastAPI can detect nothing was selected --> 
                                                     <option value="">Choose Service</option>
                                                     <option>Diagnostics</option>
-                                                    <option>tyres</option>
+                                                    <option>Tyres</option>
                                                     <option>Servicing</option>
                                                     <option>Batteries</option>
                                                     <option>Exhausts</option>
@@ -359,7 +366,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInLeft" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-1.png" alt="">
+							<img src="static/images/services_diagnostics.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -389,7 +396,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInRight" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-2.png" alt="">
+							<img src="static/images/services_tyres.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -419,7 +426,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInLeft" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-3.png" alt="">
+							<img src="static/images/services_servicing.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -449,7 +456,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInRight" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-4.png" alt="">
+							<img src="static/images/services_batteries.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -479,7 +486,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInRight" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-4.png" alt="">
+							<img src="static/images/services_exhausts.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -509,7 +516,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInRight" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-4.png" alt="">
+							<img src="static/images/services_repairs.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -539,7 +546,7 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInRight" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-4.png" alt="">
+							<img src="static/images/services_psa_wet_belt.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
@@ -569,12 +576,12 @@
 				<div class="row">
 					<div class="col-md-12 col-lg-6 process-one__image__column">
 						<div class="process-one__image wow fadeInRight" data-wow-duration="1500ms">
-							<img src="static/images/update-01-10-2021/resources/grow-1-4.png" alt="">
+							<img src="static/images/services_general_checks.png" alt="">
 						</div><!-- /.process-one__image -->
 					</div><!-- /.col-md-12 col-lg-6 -->
 					<div class="col-md-12 col-lg-6">
 						<div class="process-one__content">
-							<div class="sec-title">
+							<div class="sec-title">x
 								<h2>General Checks <span class="dot">.</span><!-- /.dot -->
 								</h2>
 							</div><!-- /.sec-title -->
@@ -1097,7 +1104,7 @@
     <script type="importmap">
     {
     "imports": {
-        "dompurify": "static/js/vendor/dompurify/purify.es.mjs"
+        "dompurify": "/static/js/vendor/dompurify/purify.es.mjs"
     }
     }
     </script>

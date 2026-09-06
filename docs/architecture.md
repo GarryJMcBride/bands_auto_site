@@ -21,6 +21,9 @@ Here are your **concise notes**:
   - Call Email API (Gmail/Outlook)
   - Honey pots used for bots
 * Email sent + optional calendar booking
+  - Sent as a `multipart/alternative` message: styled HTML (`build_email_html`) as the primary part, plain text (`build_email_body`) as the fallback part
+  - The mail client picks which part to render — HTML-capable clients show the styled version, anything that can't/won't render HTML (plaintext-only clients, some accessibility tools) automatically gets the plain-text part instead. No app-side branching needed; see `docs/development_journal.md` → "HTML email body + plain-text fallback for non-HTML recipients" for the full write-up
+  - The header logo in `build_email_html` is embedded as an inline CID attachment (`send_email` calls `.add_related()` on the html part), not a `static/images/...` `<img src>` — a raw SMTP message has no access to this app's `/static` mount, so the image has to travel inside the message itself. See `docs/development_journal.md` → "Implementing images to the html email file"
 
 
 ## Frontend Envato - Template Breakdown
@@ -150,7 +153,7 @@ Built upon top of **Linoor** template, this repo uses mostly static `JavaScript 
 
 It does not include any dependencies through `NPM (Node Package Manager)`. However any `JavaScript` functionality or libraries from this point onwards implemented by myself will use `NPM` as static files can become out of date quickly, and require much more manual handling.
 
-TODO: Implement Architecture over view for Form submission
+See `docs/pipeline-architecture.md` for the full quote-submission pipeline diagram and module-by-module breakdown (frontend form → JS/no-JS split → validation → DB → email).
 
 ## Tools Used for Development - Table of Contents
 

@@ -218,8 +218,6 @@ TODO: TBD
 
 ## Installing and configuring a Database
 
-## API Calls to an Email Exchange
-
 ## Security
 
 *See = sorceror\Self-Development\Research and Findings\Application Development\How to secure a Web App from simple attacks and keep it secure.md
@@ -295,6 +293,24 @@ They’re not using your UI. They’re talking directly to FastAPI. Hackers do n
 #### Data Validation and Security - Python
 #### Data Validation and Security - JavaScript
 
+**Does the frontend's architecture affect backend security? No.** `/api/quote-javascript-pipeline` is a public endpoint — it can't tell whether a request came from `transferFormInput.ts`, curl, or Postman, so nothing about the frontend's structure, framework, or even its presence changes what `QuoteSubmission`'s validators, `sanitise()`/`contains_injection()`, or the `slowapi` rate limiter do. They run identically on every request regardless of origin.
+
+**Does the form work with JS disabled?** It didn't, until now. `#quote-form` had no `action`/`method`, so with the JS listener gone the browser fell back to its default native submission — a `GET /` with every field appended as a query string, which FastAPI's `/` route just ignores. Nothing reached the database or the email step; a no-JS user could not submit the form at all (annoying, but not a security hole — see above).
+
+**Fix — progressive enhancement (`app.py` + `index.html`):**
+- `#quote-form` now has `action="/quote-python-pipeline" method="post"`, a real fallback target for a native browser POST.
+- New `POST /quote-python-pipeline` endpoint accepts the fields as `Form(...)` (needs the `python-multipart` package — added via `uv add python-multipart`), builds the same `QuoteSubmission`, and reuses `update_database()`/`send_email()` unchanged. Since a plain HTML form expects a page back, not JSON, it redirects (`303`) to `/?submitted=success#booknow` or `/?submitted=error#booknow` instead of returning a JSON body.
+- `read_homepage()` reads that `?submitted=` query param and passes it to the template, which shows a plain `<p class="form-success-message">`/`<p class="form-error-message">` banner above the form (same unstyled-for-now convention as the JS's existing per-field `.form-error-message` spans).
+- `/api/quote-javascript-pipeline` (JSON, used by `transferFormInput.ts` when JS runs) is untouched — `/quote-python-pipeline` is a separate, parallel path for the no-JS case only.
+
+**How would a malicious user actually attack this?** Exactly as guessed: skip the page and the JS entirely and POST straight at the endpoint —
+```bash
+curl -X POST http://localhost:8000/api/quote-javascript-pipeline \
+  -H "Content-Type: application/json" \
+  -d '{"username":"...","email":"...","phone":"...","registration":"...","service":"Tyres"}'
+```
+This already works today and always will, for any public endpoint — it's not something the frontend can prevent. It's exactly why backend validation exists independently of whatever the JS already checked.
+
 
 ## Deployment on VPS
 
@@ -353,6 +369,8 @@ Notes:
 Data is sanitized on the frontend and backend. Backend Uses Pydantic from Python, and functions to check for patterns, characters and sets limited on character amount of expected input of data in form.
 
 Frontend end does the same, this can be turned off by the browser, server santiitizing and validating is most important on server. I'm doing both just for that added layer of security. If JavaScript turned off, the server still validates data.
+
+**Frontend sanitization uses DOMPurify** (`transferFormInput.ts`) — strips all HTML tags/attributes from each field (`ALLOWED_TAGS: []`) before the regex validators run, so `<script>` etc. never even reaches validation. This is separate from and unaware of the backend's own sanitisation (`sanitise()` / `contains_injection()` in `app.py`, which does `html.escape` + strips tags + checks injection patterns) — each layer is independent, per the "backend doesn't trust the frontend" rule above. See `## Email Sending pipeline` for the DOMPurify vendoring workaround (no bundler, so it isn't a plain `npm install` away in the browser).
 
 
 
@@ -525,3 +543,113 @@ The important work is done with honeypots, Rate limiting, validation, sanitizati
 - Capture the simple architecture and note what GMAIL API could be used for in the future
     - GMAIL api comes with alot of "meta" security layers like tokens etc.
     - This is overkill for a simple send email to personal email address
+
+### Pipeline (as built)
+
+1. **HTML** — `#quote-form` (`index.html`, `novalidate`) holds the raw fields: `username`, `email`, `phone`, `registration`, `service`.
+2. **JS** (`transferFormInput.ts` → compiled `dist/transferFormInput.js`) — `submit` listener does `preventDefault()`, sanitises each field with DOMPurify, validates format/required-ness client-side (convenience only), then `fetch("/api/quote-javascript-pipeline", {method: "POST", body: JSON})`.
+3. **Python** (`app.py`, `POST /api/quote-javascript-pipeline`) — FastAPI parses the body into `QuoteSubmission` (Pydantic), which independently re-sanitises/re-validates every field (this is the real gate, not the JS). `submit_quote_javascript_pipeline()` then:
+   - `save_submission()` — parameterized `INSERT` into `quote_submissions` via the `asyncpg` pool.
+   - `send_email()` — builds a `multipart/alternative` message (styled HTML via `build_email_html` + plaintext via `build_email_body`, see "HTML email body + plain-text fallback" below) and sends it with `aiosmtplib`, creds from `config.py`/`.env` (`SMTP_HOST/PORT/USER/PASS`, `FROM_ADDR`, `BUSINESS_EMAIL`).
+   - Returns `201` + `submission_id` only if both the DB write and the email send succeed; either failing raises a `500` (DB write happens first, so a failed send doesn't lose the saved lead).
+4. **Database** — single `quote_submissions` table. DDL (`CREATE_TABLE_SQL`) now runs automatically in `lifespan()` on app startup (previously wasn't wired up anywhere, so the table didn't exist).
+
+### DOMPurify vendoring workaround (no bundler)
+
+This project has no bundler (webpack/esbuild/vite) — `npm run build` is plain `tsc`, which only compiles `.ts` → `.js`. It does **not** resolve/inline `node_modules` packages for the browser. So `import DOMPurify from "dompurify"` in `transferFormInput.ts` can't just work off `npm install` like it would in a bundled app — the browser has no way to reach into `node_modules`.
+
+Fix: treat DOMPurify like the rest of this repo's third-party JS (jQuery, Owl Carousel, etc. under `static/js/`) — vendor it as a committed static file rather than building it:
+- Copied `node_modules/dompurify/dist/purify.es.mjs` → `src/frontend/static/js/vendor/dompurify/purify.es.mjs` (served via the existing `/static` mount). Unmodified file, straight from the official `dompurify` npm package (`^3.3.3`, already in `package.json`) — `npm install` had already put it in `node_modules`, just copied as-is.
+- `index.html` has an import map pointing the bare specifier at that file:
+  ```html
+  <script type="importmap">
+  { "imports": { "dompurify": "static/js/vendor/dompurify/purify.es.mjs" } }
+  </script>
+  <script type="module" src="dist/transferFormInput.js"></script>
+  ```
+- Gotcha: this vendor file had gone missing, which broke `import DOMPurify` — and a failed top-level import silently kills the *entire* ES module, so the `submit` listener never attached and the form fell back to a native browser GET-with-querystring submission (no error shown to the user, nothing reaching FastAPI at all). Worth remembering if the form ever "does nothing" again — check the console for a module/import error first.
+
+### Second DOMPurify gotcha: `.mjs` served with the wrong MIME type
+
+Fixing the missing vendor file above wasn't the whole story — even with the file present, the browser refused to run it, and *every* form submission in testing was silently hitting the no-JS `/quote-python-pipeline` fallback instead of the JS `fetch` path, for a completely different reason.
+
+**Why MIME types matter for JS/modules at all:** every HTTP response includes a `Content-Type` header (e.g. `text/css`, `image/png`, `application/javascript`) telling the browser what kind of content it just downloaded, so it knows how to handle it. A `<script>` tag doesn't care much about the exact value as long as it's *some* JS-flavoured type — but `<script type="module">` (and `import`/`import()`) is stricter: the spec requires the response to be one of a specific allow-list of JavaScript MIME types, or the module load is rejected outright, with no code ever running. `text/plain`, `application/octet-stream`, etc. are not on that list.
+
+**Where DOMPurify comes in:** `purify.es.mjs` is fetched as a *module* (via the import map — see above), not a plain `<script src>`. FastAPI's `StaticFiles` mount doesn't hardcode a `Content-Type` per file — it asks Python's built-in `mimetypes` module to guess one from the file extension. `mimetypes` reads from the OS's own MIME registry (on Windows, effectively the registry; on Linux, files like `/etc/mime.types`), and `.mjs` — being a newer, less universal extension than plain `.js` — isn't always registered there. On this machine it wasn't, so `mimetypes` fell back to `text/plain`.
+
+**Why it failed *silently*:** `SecurityHeadersMiddleware` (`app.py`) already adds `X-Content-Type-Options: nosniff` to every response — a deliberate security header that tells the browser "trust the Content-Type I gave you, don't try to guess a better one from the file's actual bytes." That's the header doing exactly its job; it just collided with `mimetypes` guessing wrong. The combination (wrong type + nosniff) makes the browser reject the module fetch with no console error and no network-level failure visible in a normal check — `curl` and the Network tab both showed a clean `200`, which is why this took real browser testing (via `claude-in-chrome`, dynamically `import()`-ing the file directly) to actually surface, rather than curl/status-code checks alone.
+
+**Fix** (`app.py`): register the MIME type explicitly, once, at startup, so it doesn't depend on the host OS's registry at all:
+```python
+import mimetypes
+
+mimetypes.add_type("text/javascript", ".mjs")
+```
+Placed before the `/static` mount. This means the exact same code behaves identically on Windows, Linux, in CI, wherever — no dependency on what that machine's `mimetypes` happens to already know.
+
+**Real-world proof the no-JS fallback earns its keep:** by the time this MIME bug was discovered, several genuine test submissions (username "Garry") had already landed correctly in `quote_submissions` — sent *before* the bug above was even found or fixed. That's not a contradiction: the `POST /quote-python-pipeline` fallback and the form's `action="/quote-python-pipeline" method="post"` were already wired up by then. So the actual sequence was: click submit → the browser tries to run `transferFormInput.js` → it fails silently (this exact MIME bug, undiscovered at the time) → `preventDefault()` never runs → the browser falls through to its native form submission → which now had a real, working target instead of nowhere. The data never touched DOMPurify or `fetch` — it went in as plain form-urlencoded fields, validated and saved entirely server-side. Good demonstration of why the fallback is worth having as a genuinely independent path: the "enhanced" JS layer was silently dead the whole time, and the fallback caught it without anyone noticing until later.
+
+### HTML email body + plain-text fallback for non-HTML recipients
+
+The quote-notification email used to be `build_email_body()` — an all-plaintext `f"""..."""` string, i.e. raw field values dumped into the message with no formatting. Replaced with a styled version while keeping a fallback for recipients that can't (or won't) render HTML:
+
+- `build_email_html()` (`app.py`) — a table-based HTML layout (brand red `#ff0000` header, field table, footer with submission ID + timestamp) using **inline styles only**, no `<style>` block. This is a deliberate email-HTML constraint, not a stylistic choice: major clients (Outlook especially, but also Gmail's clipping/stripping behaviour) ignore or strip `<style>` tags and much of modern CSS (flexbox/grid, custom properties) in mail bodies — inline `style="..."` attributes on table cells is still the most reliably-supported approach across clients.
+- `build_email_body()` — kept as-is, the original plaintext version.
+- `send_email()` wires both together as a single MIME message:
+  ```python
+  message.set_content(build_email_body(data, submission_id))  # text/plain
+  message.add_alternative(
+      build_email_html(data, submission_id), subtype="html"
+  )  # text/html
+  ```
+  `EmailMessage.set_content()` + `.add_alternative()` produces a `multipart/alternative` message containing both parts. This is standard MIME, not app-specific logic: the **mail client**, not this code, decides which part to render — an HTML-capable client shows the styled `text/html` part, anything that only understands plaintext (a terminal mail reader, some accessibility/screen-reader setups, viewing raw source) falls back to the `text/plain` part automatically. No conditional logic needed on the send side; the fallback is inherent to the MIME format.
+- Both parts read from the same sanitised `QuoteSubmission` fields (already `html.escape`'d by the Pydantic validators before this point), so values are interpolated into the HTML as-is — no double-escaping, and no injection risk since sanitisation already ran.
+- Verified by rendering `build_email_html()`'s output to a static file and viewing it in a real browser tab (via `claude-in-chrome`) rather than trusting the string concatenation — confirmed header colour, table layout, and `mailto:`/`tel:` links all render correctly.
+
+### Still using a temporary mailbox, not a real ESP
+
+Email currently goes out over `smtp.gmail.com` using a personal Gmail account + app password (`SMTP_USER`/`SMTP_PASS` in `.env`) — this only exists to prove the send pipeline works end-to-end, it is **not** the intended long-term setup. `FROM_ADDR` and `BUSINESS_EMAIL` are also both pointed at that same throwaway test mailbox right now.
+
+A real Email Service Provider (Resend / Amazon SES, per the comments already in `config.py`/`.env`) is more robust and secure than relaying through a personal Gmail account:
+- Scoped API key / SMTP credential instead of a personal mailbox password.
+- Proper domain verification (SPF/DKIM/DMARC) so mail reliably lands in the inbox instead of getting bounced or spam-filtered (Gmail's relay is picky about the `From` domain matching the authenticated account — already bit us once).
+- `send_email()` was written provider-agnostic on purpose, so this swap should only touch `.env`, not `app.py`. See `todo.md` → `## 12. Emai         Delivery` for the concrete steps.
+
+### Implementing images to the html email file
+
+Wanted the B&S Autos logo (`bands_logo_no_scroll.png`) in the red header banner of `build_email_html()`, but a plain `<img src="static/images/bands_logo_no_scroll.png">` — the pattern used everywhere else in `index.html` — doesn't work here. That path only resolves because a *browser* is loading it from this app's own `/static` mount at `http://this-host/static/...`. An email travels over raw SMTP to an arbitrary mail client on the recipient's machine, which has no concept of this app's server or its static mount at all — a relative path resolves to nothing, and even the full `https://` URL would depend on the site being publicly deployed and reachable, which it isn't yet in dev.
+
+The fix is to embed the image *inside* the email itself as a MIME part, referenced from the HTML by a `Content-ID` instead of a URL — the same mechanism every "logo in the email header" you've ever received actually uses:
+
+```python
+message.set_content(build_email_body(data, submission_id))
+message.add_alternative(build_email_html(data, submission_id), subtype="html")
+html_part = message.get_payload()[1]
+html_part.add_related(
+    LOGO_PATH.read_bytes(), maintype="image", subtype="png", cid=f"<{LOGO_CID}>"
+)
+```
+and in the HTML:
+```html
+<img src="cid:bands-logo-header" alt="B&amp;S Autos" height="28">
+```
+
+Things worth remembering about this:
+- `add_related()` must be called on the **html sub-part** (`message.get_payload()[1]`), not on the top-level `message`. Calling it on the top level would attach the image as a separate top-level `multipart/mixed` attachment (a normal file attachment) instead of nesting it as `multipart/related` inside the html branch of the `multipart/alternative` — which is what actually makes a bare `cid:` reference resolve inside that html body.
+- The `Content-ID` header value needs angle brackets (`<bands-logo-header>`), but the `cid:` reference in the `<img src>` does not (`cid:bands-logo-header`) — this is RFC 2392 syntax, easy to get backwards. Verified by building the message with stdlib `email.message.EmailMessage` and inspecting `message.as_string()` directly rather than trusting it blind — confirmed `Content-ID: <bands-logo-header>`, `Content-Type: image/png`, and `Content-Disposition: inline` all show up in the right place before wiring it into `send_email()`.
+- Chose CID embedding over hosting the image at a real URL once deployed, even though that would also work: CID-embedded images render immediately in Gmail/Outlook/Apple Mail with no click-through, since they're already part of the downloaded message rather than a remote fetch the client may block by default ("images are hidden — display images below?"). It also means the email doesn't silently break if the image is ever moved/renamed on the live site after being sent.
+- `LOGO_PATH` is resolved once with `pathlib.Path(__file__).resolve().parent.parent / "frontend" / "static" / "images" / "bands_logo_no_scroll.png"` — reading the file happens lazily inside `send_email()`, not at import time, so `build_email_html()` stays a pure string-building function with no file I/O of its own.
+
+See `todo.md` → `## 11. Tests` — an automated test asserting the CID/image part shows up in the built message is still outstanding.
+
+## Splitting sanitisation out of schemas.py into validation.py
+
+`schemas.py` had carried a `# TODO: Find out why these functions are within a pydantic schema` comment since early on, sitting right above `QuoteSubmission`. `INJECTION_PATTERNS`, `contains_injection()`, and `sanitise()` lived in the same file as the Pydantic model, called from inside its `field_validator`s.
+
+That was fine while there was exactly one form and one Pydantic model in the whole app. It stops being fine once a second form gets hooked up (planned soon) and, further out, once this FastAPI backend gets reused as a starting point for other client sites — the goal being explicit reuse across projects, not just across forms in this one repo.
+
+**The distinction that matters:** `sanitise()`/`contains_injection()` know nothing about `QuoteSubmission` — they operate on plain strings and have no opinion about names, emails, or vehicle registrations. `QuoteSubmission` itself, by contrast, is entirely specific to this one form on this one site. Keeping them in the same file meant you couldn't reuse one without dragging the other along — a new form's schema, or a copy of this repo for a different client, would have to either duplicate the sanitisation functions or import them out of a file that's conceptually "just this site's form model."
+
+**Fix:** moved `INJECTION_PATTERNS`, `contains_injection()`, and `sanitise()` verbatim into a new `src/backend/validation.py`, with `schemas.py` now just `from src.backend.validation import contains_injection, sanitise` and calling them from its `field_validator`s exactly as before. `schemas.py` is left holding only `QuoteSubmission` (the domain-specific model) and `CREATE_TABLE_SQL` (the DB DDL) — no logic changes, pure move + import update, verified by re-running a `QuoteSubmission(...)` construction and importing `src.backend.app` afterwards to confirm nothing else referenced the old location (nothing did — `sanitise`/`contains_injection` were only ever imported from within `schemas.py` itself).
+
+The `# TODO` comment is gone — this was the answer to it. See `docs/pipeline-architecture-visual-diagram.md` for the updated module table (now a separate "Sanitisation" row for `validation.py` alongside "Schema" for `schemas.py`).
