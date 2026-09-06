@@ -60,6 +60,10 @@
 
 [ ] Implement warnings on the frontend from the server for HTTPExceptions
 
+### Update "Quote" to "Book"
+
+[ ] Change all reference to "Quote" for the "Book in now" submission, its called "Quote" from the template, not its use case on B&S Autos
+
 ## 2. Frontend Architecture (JavaScript / TypeScript)
 
 ### JavaScript & API Integration
