@@ -3,7 +3,7 @@
 
 # @pytest.mark.asyncio
 # async def test_update_database_saves_submission():
-#     mock_payload = QuoteSubmission(
+#     mock_payload = BookSubmission(
 #         name="John Doe",
 #         email="john@example.com",
 #         message="Test quote request"
@@ -20,7 +20,7 @@
 
 # @pytest.mark.asyncio
 # async def test_update_database_logs_on_failure(caplog):
-#     mock_payload = QuoteSubmission(
+#     mock_payload = BookSubmission(
 #         name="John Doe",
 #         email="john@example.com",
 #         message="Test quote request"

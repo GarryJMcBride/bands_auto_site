@@ -81,6 +81,20 @@ uv sync --dev
 uv sync --no-dev
 ```
 
+### Ruff
+
+```bash
+uv run ruff check .          # lint
+uv run ruff check --fix .    # auto-fix what it can
+uv run ruff format .         # format (style/spacing)
+```
+
+Note: global VS Code `settings.json` (`editor.formatOnSave` + `[python]` `defaultFormatter`) auto-formats `.py` files on save in every project; import sorting/lint fixes now also run automatically on save (`source.organizeImports`/`source.fixAll` in `editor.codeActionsOnSave`).
+
+---
+
+<br>
+
 ### JavaScript
 
 Install JavaScript Dependicies from `package.json`
@@ -144,6 +158,26 @@ npx tsc --init       # generates tsconfig.json
     "build": "tsc",
     "watch": "tsc --watch"
   }
+```
+
+---
+
+<br>
+
+### Prettier
+
+```bash
+npm run format                          # format src/frontend/typescript/**/*.ts (scoped script)
+npx prettier --write path/to/file.ts    # format a specific file/glob directly
+npx prettier --check .                  # dry-run, reports what would change
+```
+
+Note: global VS Code `settings.json` (`editor.formatOnSave` + `[typescript]`/`[javascript]` `defaultFormatter`) also auto-formats on save in every project, not just this repo.
+
+Markdown files (`.md`) also have a global `[markdown]` `defaultFormatter` now, so format on save applies to docs too. To run it manually against markdown, always dry-run first — a bare `prettier --write .` once reformatted this whole repo's docs by accident:
+```bash
+npx prettier --check "**/*.md"    # dry-run first — see what would change before writing
+npx prettier --write "**/*.md"    # format all markdown files
 ```
 
 ---

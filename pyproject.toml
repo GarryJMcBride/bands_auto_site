@@ -13,6 +13,22 @@ dependencies = [
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
     "pydantic[email]>=2.12.5",
+    "python-multipart>=0.0.32",
     "slowapi>=0.1.9",
     "uvicorn>=0.42.0",
 ]
+
+[dependency-groups]
+lint = [
+    "ruff>=0.16.8",
+]
+test = [
+    "pytest>=9.1.1",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "BLE"]
+
+[tool.ruff]
+# Set the maximum line length where Ruff will force a wrap
+line-length = 120
