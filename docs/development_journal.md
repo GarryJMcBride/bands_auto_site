@@ -5,10 +5,12 @@ TODO: Add links to URLS for tools and resources
 ## Mounting Folders and Understanding Paths - FASTAPI Server
 
 When you write:
+
 ```bash
 # pythonStaticFiles(directory="src/frontend/static")
 app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
 ```
+
 You're just telling FastAPI: "when someone requests a static file, go look for it in this folder." That's it. The files live in your repo, on your disk, in that folder. FastAPI just reads them from there and sends them to the browser when requested.
 
 So when a browser requests http://localhost:8000/static/style.css, FastAPI:
@@ -22,8 +24,8 @@ The file never moves. FastAPI just knows where to look.
 The mounting is about URLs, not file paths. Without mounting, there's no way for a browser to request a file. A browser doesn't have access to your disk — it can only make HTTP requests like `GET /something`.
 
 Mounting creates that bridge:
-|Browser requests:          FastAPI looks on disk at:
-/static/style.css    >     src/frontend/static/style.css
+|Browser requests: FastAPI looks on disk at:
+/static/style.css > src/frontend/static/style.css
 
 Without the mount, `/static/style.css` would just return a 404 — FastAPI has no idea what to do with that URL.
 
@@ -31,8 +33,8 @@ The browser speaks URLs, your disk speaks file paths. They're two completely dif
 
 Absolute/relative paths are for your Python code to find files on disk. They're useless to a browser sitting on someone else's computer, which has no knowledge of your server's file system at all.
 
-| File on disk                        | URL in browser          |
-| ----------------------------------- | ------------------------ |
+| File on disk                        | URL in browser                  |
+| ----------------------------------- | ------------------------------- |
 | `src/frontend/static/js/app.js`     | `thisSite/static/js/app.js`     |
 | `src/frontend/static/css/style.css` | `thisSite/static/css/style.css` |
 
@@ -40,21 +42,22 @@ Absolute/relative paths are for your Python code to find files on disk. They're 
 
 **PHP (PHPMailer) Flow**
 
-* Form > PHP script > SMTP (email sent immediately)
-* No DB by default
-* Tight coupling (form = email trigger)
-* Vulnerable to spam if unprotected
-* Manual HTML email formatting (client inconsistencies)
-* Older way of doing web development
+- Form > PHP script > SMTP (email sent immediately)
+- No DB by default
+- Tight coupling (form = email trigger)
+- Vulnerable to spam if unprotected
+- Manual HTML email formatting (client inconsistencies)
+- Older way of doing web development
 
 **Modern (Python / Node.js + APIs)**
 
-* Form > Backend > DB > Email API (Gmail / Outlook)
-* Decoupled (store first, send later)
-* APIs handle delivery + better formatting consistency
-* Easier validation, logging, retries, scaling
+- Form > Backend > DB > Email API (Gmail / Outlook)
+- Decoupled (store first, send later)
+- APIs handle delivery + better formatting consistency
+- Easier validation, logging, retries, scaling
 
 ## Laying a Static website template from Envato onto a FASTAPI Framework
+
 Utilising a static web template from `envato` marketplace are sometimes packaged by the developers in different ways. Links between files are sometimes different, have not seen one using a Backend framework yet, or frontend framework. Currently most site templates I have come across have used static `HTML, CSS and JS` files with relative paths to find eachother in the packaged REPO they exist in.
 
 ```bash
@@ -77,7 +80,7 @@ background-image: url(../images/background/home-portfolio-bg-1-1.png);
 
 # CSS Finds local font files
 src: url("../fonts/fa-brands-400.eot");
- 
+
 ```
 
 TODO: revamp this content below to highlight how using FASTAPI Endpoints changes the use of relative paths and requires mounting of static files. Everything on the web is a request, but Python has been chosen to serve the frontend to the DOM, or browser sever. Relative links are now risky as the endpoints can change the paths behind the screens, best to use absolute paths for files that will be pushed or made static by FASTAPI. *See chatGPT `relative paths in fastapi` and `understanding the browser 1 and 2`
@@ -100,7 +103,7 @@ Linoor template that was used as a boilerplate for this project is a static HTML
 
 In the HMTL pages `<a href="thisPage.html">thisPage</a>` is a `GET /` reqeust to the browser from HTML. This common practice for static websites as its a simple request to the Browser for `thisPage.html`.
 
-With the implementation/use of `FastAPI`, the requests are now handled by the Python Framework, and now we use `<a href="/thisPage">thisPage</a>` which is a call to the `FastAPI` Endpoint. 
+With the implementation/use of `FastAPI`, the requests are now handled by the Python Framework, and now we use `<a href="/thisPage">thisPage</a>` which is a call to the `FastAPI` Endpoint.
 
 ```bash
 # TODO: Change this code snipped to reflect actual page names from B&S Autos Site
@@ -117,6 +120,7 @@ def homepage_endpoint():
 <br>
 
 Why do static sites always default to the first page being index.html? Can we choose any?
+
 - With FastAPI and other frameworks, the developer explicitly decide what page the user sees first, and FastAPI returns that to the browser when it hits your site. When someone goes to your site, the browser automatically requests `GET /`, which is now served by FastAPI.
 - "/" is the “entry point”, index.html is NOT required to be the first page. The “first page” is whatever route handles. That / route is your “index”, even if no index.html exists. In FastAPI, "/" replaces index.html conceptually, but it’s just a route, not a file.
 - `<a href="about.html">` is still a request. The browser sends a GET request for that file; the only difference is whether the server serves a static file or passes the request to something like FastAPI.
@@ -125,6 +129,7 @@ Why do static sites always default to the first page being index.html? Can we ch
 <br>
 
 What will happen if I do a FastAPI call for the "/" page which will be "index.html" but I leave the navbar links as `<a href="about.html">`
+
 - It will likely break (404 error) unless you explicitly serve that file and return 404 as the FastAPI expects to be the main method serving requests for pages.
 
 ### Summary
@@ -143,30 +148,41 @@ What will happen if I do a FastAPI call for the "/" page which will be "index.ht
 ###########################################
 
 ## Decide on Languages
+
 ### Type Safety
+
 #### Python
+
 - Type annotations for Python to compile at Run time to help with Data and Robust code
+
 #### JavaScript
+
 - TypeScript used for type safety for JavaScript backend logic.
 - `.ts` files compile to `.js` at runtime, collected in a file that holds all links to `.js` files.
+
 #### JavaScript (QJuery)
-JQuery already in static website template file from Envato for UI Behaviour. This is JavaScript, but only for behaviour, transitons and movements of UI elements. 
+
+JQuery already in static website template file from Envato for UI Behaviour. This is JavaScript, but only for behaviour, transitons and movements of UI elements.
 
 Plan to use JavaScript for some backend communcating logic, which will be compiled from TypeScript. Will leave `JQuery` files to stay static and seperate from logic JavaScript files to seperate the UI from the partial backend architecture.
 
 > Wanted to clarify this as same langauge used in different aspects of application
 
 ## Code Presentation
+
 ### SCSS
+
 - Use `SASS` to structure, format and tidy `CSS` code. SASS compiles `.scss` files to `.css`.
 - `.scss` files allow nesting, variables and modular files imported, keeps `.css` from bloating up REPO.
 
 ### Folder Structure
+
 TODO: Add Folder Structure
 
 ## User Interface Interaction/Behaviour
+
 - `JQuery` used for UI Behaviour
-    - Should be seperated from `JavaScript` for backend functionality calls to python or other settings
+  - Should be seperated from `JavaScript` for backend functionality calls to python or other settings
 
 ## Set up Developer Environment in IDE
 
@@ -178,14 +194,14 @@ TODO: Add Folder Structure
 - Pip Install `uv` for Python Package Dependencies
 - Initiate `uv` and see created `pyproject.toml` and `uv.lock`
 - Initiate `package.json` or install `npm` packages that already exist
-    - If frontend web template `package.json` may include packages
-    - If not then JavaScipt/JQuery will be static
+  - If frontend web template `package.json` may include packages
+  - If not then JavaScipt/JQuery will be static
 - Create `docs` folder for Code and Development Documentation
-- Install and configure TypeScript 
+- Install and configure TypeScript
 
 ## Deciding on a Backend Framework
 
-Options for backend frameworks are vast and broad. First the correct language needs to be chosen, and then a framework can be defined. Using `JavaScript` frameworks for the backend would make sense as the front end is written in `JS`. Python vs JavaScript for the back end can be experimental, and sites can be build with both and they can be weighed/compared. 
+Options for backend frameworks are vast and broad. First the correct language needs to be chosen, and then a framework can be defined. Using `JavaScript` frameworks for the backend would make sense as the front end is written in `JS`. Python vs JavaScript for the back end can be experimental, and sites can be build with both and they can be weighed/compared.
 
 For now we use Python in the backend and `FastAPI` as a starting point. FastAPI is good for light UI web project and heavy API calls to the Backend. If advanving. It covers other aspects like security, user validation amongst others. Python also works good with most Databases. FastAPI can be used for a simple website with forms. While it is primarily marketed as an API framework, it includes built-in tools to serve HTML pages and process standard form data.
 
@@ -197,20 +213,20 @@ If wanting to experiment, consider using more heavier advanced frameworks if nee
 
 **Why Use a Framework (FastAPI)**
 
-* Handles HTTP requests properly
-* Routing (`/submit`, `/home`)
-* Validation (Pydantic)
-* Security + structure
-* Avoids manual request parsing (scripts = messy/unscalable)
+- Handles HTTP requests properly
+- Routing (`/submit`, `/home`)
+- Validation (Pydantic)
+- Security + structure
+- Avoids manual request parsing (scripts = messy/unscalable)
 
 **Serving HTML (index.html vs FastAPI)**
 
-* Static hosting: `index.html` auto-served first
-* With FastAPI:
-  * FastAPI decides routes (`GET /`)
-  * Can serve `index.html` or templates
-* Browser still renders HTML/JS
-* FastAPI = backend controller, not DOM
+- Static hosting: `index.html` auto-served first
+- With FastAPI:
+  - FastAPI decides routes (`GET /`)
+  - Can serve `index.html` or templates
+- Browser still renders HTML/JS
+- FastAPI = backend controller, not DOM
 
 ## Implementing a Frontend Framework
 
@@ -222,15 +238,17 @@ TODO: TBD
 
 *See = sorceror\Self-Development\Research and Findings\Application Development\How to secure a Web App from simple attacks and keep it secure.md
 
--------------
+---
+
 Keep it simple and layered:
+
 1. **Input validation & sanitization** – Only allow expected data types, lengths, and characters.
 2. **Escape outputs** – Prevent XSS/HTML injection by escaping user content before rendering.
-4. **Parameterized queries** – For databases, avoid SQL injection.
-5. **Use roles & least privilege** – Don’t run scripts with admin rights; isolate services.
-6. **WAF / server rules** – Block common attack patterns and unwanted characters.
-7. **Protect All endpoints from potential abuse** - You don’t need full login/auth if the form is public, but don’t leave it wide open to bots.
-In short: **never trust user input**, validate, sanitize, and isolate.
+3. **Parameterized queries** – For databases, avoid SQL injection.
+4. **Use roles & least privilege** – Don’t run scripts with admin rights; isolate services.
+5. **WAF / server rules** – Block common attack patterns and unwanted characters.
+6. **Protect All endpoints from potential abuse** - You don’t need full login/auth if the form is public, but don’t leave it wide open to bots.
+   In short: **never trust user input**, validate, sanitize, and isolate.
 
 TODO: Browser Console - Explore browser console and check you are not leaving any breadcrumbs or access for hackers via data or ways in
 
@@ -242,10 +260,12 @@ Redundant checks catch more mistakes: Even if the frontend misses a subtle issue
 Easier debugging and logging: Backend validation can log suspicious or malformed requests, useful for detecting attack patterns.
 
 **Embrace the repeated logic — it's intentional and each layer has a distinct purpose.**
+
 - Frontend validation — "Is this what we expected?" — guides the honest user to submit correct data with instant friendly feedback
 - Backend validation — "Can we trust this?" — treats everything as hostile regardless of where it came from
 
 **What good frontend validation buys you in practice**
+
 - User types abc in the phone field > JS catches it instantly, no server request made
 - User forgets to select a service > JS highlights it before they even click submit
 - User pastes something with <script> tags > stripped before it goes anywhere
@@ -254,6 +274,7 @@ Easier debugging and logging: Backend validation can log suspicious or malformed
 Think of it like airport security — the ticket check at the entrance (frontend) stops normal errors quickly, but the metal detector and baggage scan (backend) catch anything that slips through or comes with malicious intent.
 
 **Frontend validation is a courtesy, not a shield.**
+
 - For genuine users it's invaluable — instant feedback and friendly error messages guide honest people to submit correct data without frustration.
 - For a hacker it's invisible. They send raw HTTP requests directly to your API, bypassing the browser entirely. Your JavaScript never even runs.
 - Both layers are essential — they just solve different problems for completely different audiences.
@@ -267,19 +288,21 @@ After receiving a successful response from your backend, explicitly reset the fo
 
 - How do hackers or anyone web dev see your api endpoints in the server?
 
-Frontend (JS, fetch, forms) is just a convenience layer. the backend is publicly reachable if it’s on the internet. 
+Frontend (JS, fetch, forms) is just a convenience layer. the backend is publicly reachable if it’s on the internet.
+
 - Looking at Network tab in browser dev tools (while JS is ON once)
 - Viewing your frontend source code
 - Guessing common routes (`/api/login`, `/submit`, `/users`)
 - Using tools like:
-    - curl
-    - Postman
-    - Burp Suite
+  - curl
+  - Postman
+  - Burp Suite
 - Crawling/scanning your site automatically
 
 Turning off JavaScript doesn’t protect you. API must assume anyone can hit it directly.
 
 In DevTools:
+
 - Network tab > shows every request (URLs, payloads, headers)
 - Console > shows JS logs (not as useful for endpoints)
 - Sources > your JS code (can reveal endpoints)
@@ -291,6 +314,7 @@ Because HTTP is open. Instead of your frontend `fetch("/api/contact"` and sendin
 They’re not using your UI. They’re talking directly to FastAPI. Hackers do not waste time wiuth UIs.
 
 #### Data Validation and Security - Python
+
 #### Data Validation and Security - JavaScript
 
 **Does the frontend's architecture affect backend security? No.** `/api/book-javascript-pipeline` is a public endpoint — it can't tell whether a request came from `bookForm.ts`, curl, or Postman, so nothing about the frontend's structure, framework, or even its presence changes what `BookSubmission`'s validators, `sanitise()`/`contains_injection()`, or the `slowapi` rate limiter do. They run identically on every request regardless of origin.
@@ -298,19 +322,21 @@ They’re not using your UI. They’re talking directly to FastAPI. Hackers do n
 **Does the form work with JS disabled?** It didn't, until now. `#book-form` had no `action`/`method`, so with the JS listener gone the browser fell back to its default native submission — a `GET /` with every field appended as a query string, which FastAPI's `/` route just ignores. Nothing reached the database or the email step; a no-JS user could not submit the form at all (annoying, but not a security hole — see above).
 
 **Fix — progressive enhancement (`app.py` + `index.html`):**
+
 - `#book-form` now has `action="/book-python-pipeline" method="post"`, a real fallback target for a native browser POST.
 - New `POST /book-python-pipeline` endpoint accepts the fields as `Form(...)` (needs the `python-multipart` package — added via `uv add python-multipart`), builds the same `BookSubmission`, and reuses `update_book_database()`/`send_book_email()` unchanged. Since a plain HTML form expects a page back, not JSON, it redirects (`303`) to `/?book_submitted=success#booknow` or `/?book_submitted=error#booknow` instead of returning a JSON body.
 - `read_homepage()` reads that `?book_submitted=` query param and passes it to the template, which shows a plain `<p class="form-success-message">`/`<p class="form-error-message">` banner above the form (same unstyled-for-now convention as the JS's existing per-field `.form-error-message` spans).
 - `/api/book-javascript-pipeline` (JSON, used by `bookForm.ts` when JS runs) is untouched — `/book-python-pipeline` is a separate, parallel path for the no-JS case only.
 
 **How would a malicious user actually attack this?** Exactly as guessed: skip the page and the JS entirely and POST straight at the endpoint —
+
 ```bash
 curl -X POST http://localhost:8000/api/book-javascript-pipeline \
   -H "Content-Type: application/json" \
   -d '{"username":"...","email":"...","phone":"...","registration":"...","service":"Tyres"}'
 ```
-This already works today and always will, for any public endpoint — it's not something the frontend can prevent. It's exactly why backend validation exists independently of whatever the JS already checked.
 
+This already works today and always will, for any public endpoint — it's not something the frontend can prevent. It's exactly why backend validation exists independently of whatever the JS already checked.
 
 ## Deployment on VPS
 
@@ -327,14 +353,14 @@ It's a lightning-fast ASGI server that acts as the bridge between incoming HTTP 
 
 **Why Uvicorn**
 
-* ASGI server > runs FastAPI
-* Async support (non-blocking tasks)
-* Production-ready, fast
+- ASGI server > runs FastAPI
+- Async support (non-blocking tasks)
+- Production-ready, fast
 
 **Workers:**
 
-* Small app: `1` worker fine
-* Scale: ~`(CPU cores × 2) + 1`
+- Small app: `1` worker fine
+- Scale: ~`(CPU cores × 2) + 1`
 
 ## Testing Functionality on Testing Envrionment (T-800/T-X)
 
@@ -349,20 +375,19 @@ npx tsc --init       # generates tsconfig.json
 ```
 
 Notes:
+
 - Once installed, an autogenerated `tsconfig.json` file will be created in the root folder
 - Configurations need set inside `tsconfig.json`: https://www.typescriptlang.org/tsconfig/
-    - Covered notes in `Some Scripts worth notes` going further into detail regarding what configurations were made
-    - Important for clarity... sets environment to call JQUERY commands inside typescript files
+  - Covered notes in `Some Scripts worth notes` going further into detail regarding what configurations were made
+  - Important for clarity... sets environment to call JQUERY commands inside typescript files
 - `Typescript` has to compiled to JavaScript, Need to keep logic JavaScript serated
-    - Can manually compile before push to live instance
-    - Can compile at runtime with bundler so manual intervention is not needed
+  - Can manually compile before push to live instance
+  - Can compile at runtime with bundler so manual intervention is not needed
 - Need to mount JavaScript files (compiled) from TypeScript so that FASTAPI can serve them to the browser
-    - Done in `app.py`
-    - Kept seperate from `static` folder which contains `HTML, CSS and JQUERY`
-    - Wanted to use another folder to keep compiled code seperate
-    - Appears in a `/dist` folder
-
-
+  - Done in `app.py`
+  - Kept seperate from `static` folder which contains `HTML, CSS and JQUERY`
+  - Wanted to use another folder to keep compiled code seperate
+  - Appears in a `/dist` folder
 
 ## Sanatizing and Validating Data
 
@@ -371,8 +396,6 @@ Data is sanitized on the frontend and backend. Backend Uses Pydantic from Python
 Frontend end does the same, this can be turned off by the browser, server santiitizing and validating is most important on server. I'm doing both just for that added layer of security. If JavaScript turned off, the server still validates data.
 
 **Frontend sanitization uses DOMPurify** (`sanitise.ts`, shared by `bookForm.ts`/`enquiryForm.ts`) — strips all HTML tags/attributes from each field (`ALLOWED_TAGS: []`) before the regex validators run, so `<script>` etc. never even reaches validation. This is separate from and unaware of the backend's own sanitisation (`sanitise()` / `contains_injection()` in `validation.py`, which does `html.escape` + strips tags + checks injection patterns) — each layer is independent, per the "backend doesn't trust the frontend" rule above. See `## Email Sending pipeline` for the DOMPurify vendoring workaround (no bundler, so it isn't a plain `npm install` away in the browser).
-
-
 
 ## Claude Boilerplate for JavaScipt(TS) and Python
 
@@ -404,6 +427,7 @@ The domains allowed to talk to your API. Which brings us to —
 CORS stands for **Cross Origin Resource Sharing**. It's a browser security rule that blocks a website from making requests to a different domain unless that domain explicitly says it's allowed.
 
 For example without CORS configured:
+
 - `https://yourdomain.com` tries to call `https://yourapi.com/api/quote`
 - The browser blocks it because the domains differ
 
@@ -414,10 +438,13 @@ For example without CORS configured:
 ### 1. Install PostgreSQL
 
 Download the installer from:
+
 ```
 https://www.postgresql.org/download/windows/
 ```
+
 Run it and note down:
+
 - The **password** you set for the `postgres` superuser
 - The **port** (default `5432`)
 
@@ -426,6 +453,7 @@ Run it and note down:
 ### 2. Add PostgreSQL to your PATH
 
 During installation check **"Add to PATH"** or add it manually:
+
 ```
 C:\Program Files\PostgreSQL\16\bin
 ```
@@ -435,9 +463,11 @@ C:\Program Files\PostgreSQL\16\bin
 ### 3. Connect to PostgreSQL
 
 Open a terminal:
+
 ```bash
 psql -U postgres
 ```
+
 Enter your password when prompted.
 
 ---
@@ -445,10 +475,10 @@ Enter your password when prompted.
 ### 4. Create your database and user
 
 ```sql
-CREATE DATABASE bands_auto;
+CREATE DATABASE bands_autos;
 CREATE USER bands_user WITH PASSWORD 'yourpassword';
-GRANT ALL PRIVILEGES ON DATABASE bands_auto TO bands_user;
-\c bands_auto
+GRANT ALL PRIVILEGES ON DATABASE bands_autos TO bands_user;
+\c bands_autos
 GRANT ALL ON SCHEMA public TO bands_user;
 ```
 
@@ -473,7 +503,7 @@ CREATE TABLE book_submissions (
 ### 6. Update your `.env`
 
 ```env
-DATABASE_URL="postgresql://bands_user:yourpassword@localhost:5432/bands_auto"
+DATABASE_URL="postgresql://bands_user:yourpassword@localhost:5432/bands_autos"
 ```
 
 ---
@@ -506,17 +536,21 @@ asyncio.run(test())
 ### 1. **Install Git for Windows** (recommended, not required): https://git-scm.com/downloads/win — defaults are fine.
 
 ### 2. **Open PowerShell** (not CMD) and run:
+
 ```powershell
 irm https://claude.ai/install.ps1 | iex
 ```
 
 ### 3. **Add it to PATH** (the installer sometimes doesn't do this automatically):
+
 ```powershell
 [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.local\bin", "User")
 ```
+
 Close and reopen PowerShell.
 
 ### 4. **Verify:**
+
 ```powershell
 claude --version
 ```
@@ -524,9 +558,11 @@ claude --version
 ### 5. **Authenticate:** run `claude` in any folder, follow the OAuth prompt (Claude Pro/Max/Team account or API key).
 
 ### 6. **If using Git Bash too**, make sure `~/.bashrc` exists and includes:
+
 ```bash
 export PATH="$PATH:/c/Users/<yourname>/.local/bin"
 ```
+
 Then `source ~/.bashrc` or open a new window.
 
 ### 7. **Keep config out of repos:** store project instructions in `~/.claude/CLAUDE.md` (global) rather than a per-repo `.claude/CLAUDE.md`, or add `.claude/` to `.gitignore` if you do want repo-level config.
@@ -541,8 +577,8 @@ The important work is done with honeypots, Rate limiting, validation, sanitizati
 
 - Decide and change architecture.
 - Capture the simple architecture and note what GMAIL API could be used for in the future
-    - GMAIL api comes with alot of "meta" security layers like tokens etc.
-    - This is overkill for a simple send email to personal email address
+  - GMAIL api comes with alot of "meta" security layers like tokens etc.
+  - This is overkill for a simple send email to personal email address
 
 ### Pipeline (as built)
 
@@ -559,35 +595,38 @@ The important work is done with honeypots, Rate limiting, validation, sanitizati
 This project has no bundler (webpack/esbuild/vite) — `npm run build` is plain `tsc`, which only compiles `.ts` → `.js`. It does **not** resolve/inline `node_modules` packages for the browser. So `import DOMPurify from "dompurify"` in `transferFormInput.ts` (this form's original, pre-split TypeScript file — see above) can't just work off `npm install` like it would in a bundled app — the browser has no way to reach into `node_modules`.
 
 Fix: treat DOMPurify like the rest of this repo's third-party JS (jQuery, Owl Carousel, etc. under `static/js/`) — vendor it as a committed static file rather than building it:
+
 - Copied `node_modules/dompurify/dist/purify.es.mjs` → `src/frontend/static/js/vendor/dompurify/purify.es.mjs` (served via the existing `/static` mount). Unmodified file, straight from the official `dompurify` npm package (`^3.3.3`, already in `package.json`) — `npm install` had already put it in `node_modules`, just copied as-is.
 - `index.html` has an import map pointing the bare specifier at that file:
   ```html
   <script type="importmap">
-  { "imports": { "dompurify": "static/js/vendor/dompurify/purify.es.mjs" } }
+    { "imports": { "dompurify": "static/js/vendor/dompurify/purify.es.mjs" } }
   </script>
   <script type="module" src="dist/transferFormInput.js"></script>
   ```
-- Gotcha: this vendor file had gone missing, which broke `import DOMPurify` — and a failed top-level import silently kills the *entire* ES module, so the `submit` listener never attached and the form fell back to a native browser GET-with-querystring submission (no error shown to the user, nothing reaching FastAPI at all). Worth remembering if the form ever "does nothing" again — check the console for a module/import error first.
+- Gotcha: this vendor file had gone missing, which broke `import DOMPurify` — and a failed top-level import silently kills the _entire_ ES module, so the `submit` listener never attached and the form fell back to a native browser GET-with-querystring submission (no error shown to the user, nothing reaching FastAPI at all). Worth remembering if the form ever "does nothing" again — check the console for a module/import error first.
 
 ### Second DOMPurify gotcha: `.mjs` served with the wrong MIME type
 
-Fixing the missing vendor file above wasn't the whole story — even with the file present, the browser refused to run it, and *every* form submission in testing was silently hitting the no-JS `/book-python-pipeline` fallback instead of the JS `fetch` path, for a completely different reason.
+Fixing the missing vendor file above wasn't the whole story — even with the file present, the browser refused to run it, and _every_ form submission in testing was silently hitting the no-JS `/book-python-pipeline` fallback instead of the JS `fetch` path, for a completely different reason.
 
-**Why MIME types matter for JS/modules at all:** every HTTP response includes a `Content-Type` header (e.g. `text/css`, `image/png`, `application/javascript`) telling the browser what kind of content it just downloaded, so it knows how to handle it. A `<script>` tag doesn't care much about the exact value as long as it's *some* JS-flavoured type — but `<script type="module">` (and `import`/`import()`) is stricter: the spec requires the response to be one of a specific allow-list of JavaScript MIME types, or the module load is rejected outright, with no code ever running. `text/plain`, `application/octet-stream`, etc. are not on that list.
+**Why MIME types matter for JS/modules at all:** every HTTP response includes a `Content-Type` header (e.g. `text/css`, `image/png`, `application/javascript`) telling the browser what kind of content it just downloaded, so it knows how to handle it. A `<script>` tag doesn't care much about the exact value as long as it's _some_ JS-flavoured type — but `<script type="module">` (and `import`/`import()`) is stricter: the spec requires the response to be one of a specific allow-list of JavaScript MIME types, or the module load is rejected outright, with no code ever running. `text/plain`, `application/octet-stream`, etc. are not on that list.
 
-**Where DOMPurify comes in:** `purify.es.mjs` is fetched as a *module* (via the import map — see above), not a plain `<script src>`. FastAPI's `StaticFiles` mount doesn't hardcode a `Content-Type` per file — it asks Python's built-in `mimetypes` module to guess one from the file extension. `mimetypes` reads from the OS's own MIME registry (on Windows, effectively the registry; on Linux, files like `/etc/mime.types`), and `.mjs` — being a newer, less universal extension than plain `.js` — isn't always registered there. On this machine it wasn't, so `mimetypes` fell back to `text/plain`.
+**Where DOMPurify comes in:** `purify.es.mjs` is fetched as a _module_ (via the import map — see above), not a plain `<script src>`. FastAPI's `StaticFiles` mount doesn't hardcode a `Content-Type` per file — it asks Python's built-in `mimetypes` module to guess one from the file extension. `mimetypes` reads from the OS's own MIME registry (on Windows, effectively the registry; on Linux, files like `/etc/mime.types`), and `.mjs` — being a newer, less universal extension than plain `.js` — isn't always registered there. On this machine it wasn't, so `mimetypes` fell back to `text/plain`.
 
-**Why it failed *silently*:** `SecurityHeadersMiddleware` (`app.py`) already adds `X-Content-Type-Options: nosniff` to every response — a deliberate security header that tells the browser "trust the Content-Type I gave you, don't try to guess a better one from the file's actual bytes." That's the header doing exactly its job; it just collided with `mimetypes` guessing wrong. The combination (wrong type + nosniff) makes the browser reject the module fetch with no console error and no network-level failure visible in a normal check — `curl` and the Network tab both showed a clean `200`, which is why this took real browser testing (via `claude-in-chrome`, dynamically `import()`-ing the file directly) to actually surface, rather than curl/status-code checks alone.
+**Why it failed _silently_:** `SecurityHeadersMiddleware` (`app.py`) already adds `X-Content-Type-Options: nosniff` to every response — a deliberate security header that tells the browser "trust the Content-Type I gave you, don't try to guess a better one from the file's actual bytes." That's the header doing exactly its job; it just collided with `mimetypes` guessing wrong. The combination (wrong type + nosniff) makes the browser reject the module fetch with no console error and no network-level failure visible in a normal check — `curl` and the Network tab both showed a clean `200`, which is why this took real browser testing (via `claude-in-chrome`, dynamically `import()`-ing the file directly) to actually surface, rather than curl/status-code checks alone.
 
 **Fix** (`app.py`): register the MIME type explicitly, once, at startup, so it doesn't depend on the host OS's registry at all:
+
 ```python
 import mimetypes
 
 mimetypes.add_type("text/javascript", ".mjs")
 ```
+
 Placed before the `/static` mount. This means the exact same code behaves identically on Windows, Linux, in CI, wherever — no dependency on what that machine's `mimetypes` happens to already know.
 
-**Real-world proof the no-JS fallback earns its keep:** by the time this MIME bug was discovered, several genuine test submissions (username "Garry") had already landed correctly in `book_submissions` — sent *before* the bug above was even found or fixed. That's not a contradiction: the `POST /book-python-pipeline` fallback and the form's `action="/book-python-pipeline" method="post"` were already wired up by then. So the actual sequence was: click submit → the browser tries to run `transferFormInput.js` → it fails silently (this exact MIME bug, undiscovered at the time) → `preventDefault()` never runs → the browser falls through to its native form submission → which now had a real, working target instead of nowhere. The data never touched DOMPurify or `fetch` — it went in as plain form-urlencoded fields, validated and saved entirely server-side. Good demonstration of why the fallback is worth having as a genuinely independent path: the "enhanced" JS layer was silently dead the whole time, and the fallback caught it without anyone noticing until later.
+**Real-world proof the no-JS fallback earns its keep:** by the time this MIME bug was discovered, several genuine test submissions (username "Garry") had already landed correctly in `book_submissions` — sent _before_ the bug above was even found or fixed. That's not a contradiction: the `POST /book-python-pipeline` fallback and the form's `action="/book-python-pipeline" method="post"` were already wired up by then. So the actual sequence was: click submit → the browser tries to run `transferFormInput.js` → it fails silently (this exact MIME bug, undiscovered at the time) → `preventDefault()` never runs → the browser falls through to its native form submission → which now had a real, working target instead of nowhere. The data never touched DOMPurify or `fetch` — it went in as plain form-urlencoded fields, validated and saved entirely server-side. Good demonstration of why the fallback is worth having as a genuinely independent path: the "enhanced" JS layer was silently dead the whole time, and the fallback caught it without anyone noticing until later.
 
 ### HTML email body + plain-text fallback for non-HTML recipients
 
@@ -611,15 +650,16 @@ The booking-notification email used to be `build_email_body()` — an all-plaint
 Email currently goes out over `smtp.gmail.com` using a personal Gmail account + app password (`SMTP_USER`/`SMTP_PASS` in `.env`) — this only exists to prove the send pipeline works end-to-end, it is **not** the intended long-term setup. `FROM_ADDR` and `BUSINESS_EMAIL` are also both pointed at that same throwaway test mailbox right now.
 
 A real Email Service Provider (Resend / Amazon SES, per the comments already in `config.py`/`.env`) is more robust and secure than relaying through a personal Gmail account:
+
 - Scoped API key / SMTP credential instead of a personal mailbox password.
 - Proper domain verification (SPF/DKIM/DMARC) so mail reliably lands in the inbox instead of getting bounced or spam-filtered (Gmail's relay is picky about the `From` domain matching the authenticated account — already bit us once).
 - `send_email()` was written provider-agnostic on purpose, so this swap should only touch `.env`, not `app.py`. See `todo.md` → `## 12. Emai         Delivery` for the concrete steps.
 
 ### Implementing images to the html email file
 
-Wanted the B&S Autos logo (`bands_logo_no_scroll.png`) in the red header banner of `build_email_html()`, but a plain `<img src="static/images/bands_logo_no_scroll.png">` — the pattern used everywhere else in `index.html` — doesn't work here. That path only resolves because a *browser* is loading it from this app's own `/static` mount at `http://this-host/static/...`. An email travels over raw SMTP to an arbitrary mail client on the recipient's machine, which has no concept of this app's server or its static mount at all — a relative path resolves to nothing, and even the full `https://` URL would depend on the site being publicly deployed and reachable, which it isn't yet in dev.
+Wanted the B&S Autos logo (`bands_logo_no_scroll.png`) in the red header banner of `build_email_html()`, but a plain `<img src="static/images/bands_logo_no_scroll.png">` — the pattern used everywhere else in `index.html` — doesn't work here. That path only resolves because a _browser_ is loading it from this app's own `/static` mount at `http://this-host/static/...`. An email travels over raw SMTP to an arbitrary mail client on the recipient's machine, which has no concept of this app's server or its static mount at all — a relative path resolves to nothing, and even the full `https://` URL would depend on the site being publicly deployed and reachable, which it isn't yet in dev.
 
-The fix is to embed the image *inside* the email itself as a MIME part, referenced from the HTML by a `Content-ID` instead of a URL — the same mechanism every "logo in the email header" you've ever received actually uses:
+The fix is to embed the image _inside_ the email itself as a MIME part, referenced from the HTML by a `Content-ID` instead of a URL — the same mechanism every "logo in the email header" you've ever received actually uses:
 
 ```python
 message.set_content(build_email_body(data, submission_id))
@@ -629,12 +669,15 @@ html_part.add_related(
     LOGO_PATH.read_bytes(), maintype="image", subtype="png", cid=f"<{LOGO_CID}>"
 )
 ```
+
 and in the HTML:
+
 ```html
-<img src="cid:bands-logo-header" alt="B&amp;S Autos" height="28">
+<img src="cid:bands-logo-header" alt="B&amp;S Autos" height="28" />
 ```
 
 Things worth remembering about this:
+
 - `add_related()` must be called on the **html sub-part** (`message.get_payload()[1]`), not on the top-level `message`. Calling it on the top level would attach the image as a separate top-level `multipart/mixed` attachment (a normal file attachment) instead of nesting it as `multipart/related` inside the html branch of the `multipart/alternative` — which is what actually makes a bare `cid:` reference resolve inside that html body.
 - The `Content-ID` header value needs angle brackets (`<bands-logo-header>`), but the `cid:` reference in the `<img src>` does not (`cid:bands-logo-header`) — this is RFC 2392 syntax, easy to get backwards. Verified by building the message with stdlib `email.message.EmailMessage` and inspecting `message.as_string()` directly rather than trusting it blind — confirmed `Content-ID: <bands-logo-header>`, `Content-Type: image/png`, and `Content-Disposition: inline` all show up in the right place before wiring it in.
 - Chose CID embedding over hosting the image at a real URL once deployed, even though that would also work: CID-embedded images render immediately in Gmail/Outlook/Apple Mail with no click-through, since they're already part of the downloaded message rather than a remote fetch the client may block by default ("images are hidden — display images below?"). It also means the email doesn't silently break if the image is ever moved/renamed on the live site after being sent.
@@ -700,44 +743,46 @@ While auditing template bloat (see `docs/frontend-bloat-audit.md`), one of the "
 ### What it was doing
 
 `custom-script.js` (~line 956, now commented out) ran this on every page load:
+
 ```js
-if ($("#contact-form").length) {
-  $("#contact-form").validate({
+if ($('#contact-form').length) {
+  $('#contact-form').validate({
     rules: {
       username: { required: true },
       email: { required: true, email: true },
       phone: { required: true },
       subject: { required: true },
-      message: { required: true }
-    }
+      message: { required: true },
+    },
   });
 }
 ```
+
 This is the **jQuery Validation Plugin** (`validate.js`, v1.11.0, 2013) — a client-side "are these fields filled in / roughly the right shape" checker. It's purely presence/format checking: it never sanitises anything, never strips or escapes content, and has no concept of injection patterns.
 
 ### How it wires up to `custom-script.js` — the jQuery plugin pattern
 
 There's no explicit call between the two files — the connection is entirely through shared global state:
 
-1. **Load order**: `index.html` loads `validate.js` *before* `custom-script.js` (both plain classic `<script>` tags, no modules).
-2. **`validate.js` extends jQuery's prototype**: it does `jQuery.extend(jQuery.fn, { validate: function(t){...} })`. `jQuery.fn` is `jQuery.prototype` — every `$(...)`-wrapped element inherits from it. This bolts a `.validate()` method onto *every* jQuery object, site-wide, the moment `validate.js` executes. Standard jQuery plugin pattern.
+1. **Load order**: `index.html` loads `validate.js` _before_ `custom-script.js` (both plain classic `<script>` tags, no modules).
+2. **`validate.js` extends jQuery's prototype**: it does `jQuery.extend(jQuery.fn, { validate: function(t){...} })`. `jQuery.fn` is `jQuery.prototype` — every `$(...)`-wrapped element inherits from it. This bolts a `.validate()` method onto _every_ jQuery object, site-wide, the moment `validate.js` executes. Standard jQuery plugin pattern.
 3. **`custom-script.js` just calls the method that now exists**: `$("#contact-form").validate({...})` is nothing more than "wrap the form, call the method `validate.js` attached earlier." Neither file imports or references the other directly.
-4. **What `.validate()` itself does under the hood**: it calls `this.submit(function(t){...})` — jQuery's shorthand for `form.addEventListener("submit", handler)` — registering its *own* native submit listener on the form, entirely independently of anything `enquiryForm.ts` does.
+4. **What `.validate()` itself does under the hood**: it calls `this.submit(function(t){...})` — jQuery's shorthand for `form.addEventListener("submit", handler)` — registering its _own_ native submit listener on the form, entirely independently of anything `enquiryForm.ts` does.
 
 ### Why it looked dead but wasn't
 
-`docs/architecture.md` already claims *"Removed form Validation... from `custom-script` as its now handled by TypeScript"* — and most of the template's other jQuery widgets genuinely are dead (see the audit doc's version table: `mixitup.js`, `knob.js`, `appear.js`, `jquery.fancybox.js`, `isotope.js`, `nouislider.*` all target elements that don't exist in `index.html`). This one looked like it should belong in that same "removed/dead" bucket, since the intent was clearly to hand validation over to TypeScript entirely.
+`docs/architecture.md` already claims _"Removed form Validation... from `custom-script` as its now handled by TypeScript"_ — and most of the template's other jQuery widgets genuinely are dead (see the audit doc's version table: `mixitup.js`, `knob.js`, `appear.js`, `jquery.fancybox.js`, `isotope.js`, `nouislider.*` all target elements that don't exist in `index.html`). This one looked like it should belong in that same "removed/dead" bucket, since the intent was clearly to hand validation over to TypeScript entirely.
 
-But `#contact-form` isn't template leftover — it's the *real*, live ID of the enquiry form (`#requestcall` section), the same element `enquiryForm.ts` attaches its own `submit` listener to. So unlike every other "dead" plugin in the audit, this one's trigger selector genuinely matches something on the page — it was actually running on every load, just never noticed because it doesn't visibly error or obviously misbehave. It's a live conflict, not dead code, which is exactly why it's called out separately from the rest of the audit's "unused plugin" list.
+But `#contact-form` isn't template leftover — it's the _real_, live ID of the enquiry form (`#requestcall` section), the same element `enquiryForm.ts` attaches its own `submit` listener to. So unlike every other "dead" plugin in the audit, this one's trigger selector genuinely matches something on the page — it was actually running on every load, just never noticed because it doesn't visibly error or obviously misbehave. It's a live conflict, not dead code, which is exactly why it's called out separately from the rest of the audit's "unused plugin" list.
 
 ### `validate.js` vs. this repo's actual sanitisation/validation pipeline
 
-| | `validate.js` | This repo's pipeline |
-|---|---|---|
-| Checks | Presence only (`required: true`) + basic email format | Full: sanitise (strip HTML/control chars, `html.escape`), injection-pattern detection, length bounds, name/phone/UK-reg regex, blank-check |
-| Sanitises input? | No — never touches/cleans the value, only validates presence/shape | Yes — `DOMPurify` (`sanitise.ts`) client-side, `sanitise()`/`contains_injection()` + Pydantic validators server-side (`validation.py`) |
-| Security value | None — a UX convenience layer only | This is the actual security boundary — `validation.py` is what's trusted |
-| Trust model | Assumes it even runs (client-side, bypassable) | Backend never trusts the client; re-validates every field regardless of what the JS did |
+|                  | `validate.js`                                                      | This repo's pipeline                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Checks           | Presence only (`required: true`) + basic email format              | Full: sanitise (strip HTML/control chars, `html.escape`), injection-pattern detection, length bounds, name/phone/UK-reg regex, blank-check |
+| Sanitises input? | No — never touches/cleans the value, only validates presence/shape | Yes — `DOMPurify` (`sanitise.ts`) client-side, `sanitise()`/`contains_injection()` + Pydantic validators server-side (`validation.py`)     |
+| Security value   | None — a UX convenience layer only                                 | This is the actual security boundary — `validation.py` is what's trusted                                                                   |
+| Trust model      | Assumes it even runs (client-side, bypassable)                     | Backend never trusts the client; re-validates every field regardless of what the JS did                                                    |
 
 It's strictly weaker than and redundant with what's already in place, contributes zero sanitisation, and its only real effect was the interference risk above — a submit-handler race with `enquiryForm.ts` on the same form, with no upside.
 
@@ -747,9 +792,10 @@ Per `todo.md` → `## 13. Frontend Bloat Audit`, the call site in `custom-script
 
 ## UI plumbing: `formFeedback.ts`
 
-`src/frontend/typescript/formFeedback.ts` is pure DOM-rendering plumbing shared by `bookForm.ts` and `enquiryForm.ts` — it has no validation logic of its own and makes no network calls. It's the "how do I show/hide feedback" layer both forms call into *after* they've already validated or submitted.
+`src/frontend/typescript/formFeedback.ts` is pure DOM-rendering plumbing shared by `bookForm.ts` and `enquiryForm.ts` — it has no validation logic of its own and makes no network calls. It's the "how do I show/hide feedback" layer both forms call into _after_ they've already validated or submitted.
 
 Four exported functions:
+
 - `displayErrors(errors, form)` — takes the `{fieldName: message}` object each form's `validate*FormData()` produces, and for each entry inserts a `<span class="form-error-message" role="alert">` immediately after that input, plus `aria-invalid="true"` on the input for screen readers. Calls `clearErrors()` first so repeated invalid submits don't stack duplicate spans.
 - `clearErrors(form)` — removes all `.form-error-message` spans and `aria-invalid` attributes from the form.
 - `showSubmitMessage(form, type, message)` — after a `fetch()` call resolves, inserts one `<p class="form-success-message">`/`.form-error-message` directly above the `<form>` (`insertAdjacentElement("beforebegin", ...)`), with `role="status"`.

@@ -25,6 +25,26 @@ If not installed, download from: https://nodejs.org/
 
 <br>
 
+### PostgreSQL
+
+Install from https://www.postgresql.org/download/windows/, then run `psql -U postgres` and:
+
+```sql
+CREATE DATABASE bands_autos;
+CREATE USER bands_user WITH PASSWORD 'yourpassword';
+GRANT ALL PRIVILEGES ON DATABASE bands_autos TO bands_user;
+\c bands_autos
+GRANT ALL ON SCHEMA public TO bands_user;
+```
+
+Set `DATABASE_URL="postgresql://bands_user:yourpassword@localhost:5432/bands_autos"` in `.env`.
+
+````
+
+---
+
+<br>
+
 ## Setup/Configure Environment - Launch FastAPI Server
 
 TODO: Split this up into useful commands vs launching the application
@@ -36,7 +56,7 @@ When working between branches, or pulling updates from git, the language environ
 ```bash
 # create Python Environment
 python -m venv .venv
-```
+````
 
 ```bash
 # activate .venv - Linux Terminal
@@ -123,8 +143,9 @@ npm uninstall <package>         # Remove a package
 
 ```bash
 # Typically builds for production
-npm run build                   
+npm run build
 ```
+
 ---
 
 <br>
@@ -153,6 +174,7 @@ npx tsc --init       # generates tsconfig.json
 ```
 
 - `npm run build` and `npm run watch` will call these shortcuts from `package.json`
+
 ```bash
   "scripts": {
     "build": "tsc",
@@ -175,6 +197,7 @@ npx prettier --check .                  # dry-run, reports what would change
 Note: global VS Code `settings.json` (`editor.formatOnSave` + `[typescript]`/`[javascript]` `defaultFormatter`) also auto-formats on save in every project, not just this repo.
 
 Markdown files (`.md`) also have a global `[markdown]` `defaultFormatter` now, so format on save applies to docs too. To run it manually against markdown, always dry-run first — a bare `prettier --write .` once reformatted this whole repo's docs by accident:
+
 ```bash
 npx prettier --check "**/*.md"    # dry-run first — see what would change before writing
 npx prettier --write "**/*.md"    # format all markdown files
@@ -190,16 +213,19 @@ npx prettier --write "**/*.md"    # format all markdown files
 # Install dependencies
 pip install fastapi uvicorn
 ```
+
 ```bash
 # Run directly from the terminal (simplest way)
 uvicorn main:app
 # or Enable auto-reload
 uvicorn main:app --reload
 ```
+
 ```bash
 # Run on a specific port
 uvicorn main:app --reload --port 8080
 ```
+
 ```bash
 # Run on all network interfaces (accessible on your local network)
 uvicorn main:app --host 0.0.0.0 --port 8080
