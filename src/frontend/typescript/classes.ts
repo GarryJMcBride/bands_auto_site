@@ -3,10 +3,10 @@
  */
 
 export const VALID_SERVICES = [
-  "Diagnostics",
-  "Tyres",
-  "Servicing",
-  "Batteries",
-  "Exhausts",
-  "Repairs",
+  'Diagnostics',
+  'Tyres',
+  'Servicing',
+  'Batteries',
+  'Exhausts',
+  'Repairs',
 ] as const;

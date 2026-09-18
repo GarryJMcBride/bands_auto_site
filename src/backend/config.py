@@ -3,8 +3,8 @@
 
 This module manages application settings, and other configuration-related tasks for the B&S Autos web application."""
 
-import os
 import logging
+import os
 
 from dotenv import load_dotenv
 from slowapi import Limiter
@@ -45,5 +45,5 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 FROM_ADDR = os.getenv("FROM_ADDR")
 
-# Destination inbox for quote notifications (the business owner).
+# Destination inbox for booking/enquiry notifications (the business owner).
 BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL")

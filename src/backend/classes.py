@@ -2,8 +2,6 @@
 """Shared classes for the B&S Autos web application: the security-headers
 middleware and the Postgres connection-pool wrapper used across the app."""
 
-from typing import Optional
-
 import asyncpg
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -44,7 +42,7 @@ class Database:
 
     def __init__(self, dsn: str) -> None:
         self.dsn = dsn
-        self.pool: Optional[asyncpg.Pool] = None
+        self.pool: asyncpg.Pool | None = None
 
     async def connect(self) -> None:
         """Create the connection pool. Called once at app startup."""
@@ -62,5 +60,6 @@ class Database:
 
 # Module-level singleton — constructed at import time, but `db.pool` stays None
 # until `Database.connect()` is awaited from the FastAPI lifespan.
-# TODO: why is this defined here as well as inside config.py? Should we just import the config.db instead of creating a new one here?
+# TODO: why is this defined here as well as inside config.py? Should we just import
+# the config.db instead of creating a new one here?
 db = Database(config.DATABASE_URL)

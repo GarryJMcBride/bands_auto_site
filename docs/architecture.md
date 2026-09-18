@@ -10,6 +10,7 @@ Here are your **concise notes**:
   - Catches common mistakes
   - Honey pots used for bots
 * JS `fetch()` > POST to backend
+  - Submit button is disabled and relabelled "Submitting…" for the duration of the request (`submitBookData`/`submitEnquiryData` in `bookForm.ts`/`enquiryForm.ts`), so the user gets immediate feedback instead of silence between validation passing and the response arriving — also blocks accidental double-submits. Restored in a `finally` block regardless of success/failure. See `docs/development_journal.md` → "Closing the submit-to-response feedback gap"
 * JS removed the data from the browser so that the information is gone from the frontend
 * Backend (Python/Node):
   - Server side validation is vital 
@@ -21,9 +22,10 @@ Here are your **concise notes**:
   - Call Email API (Gmail/Outlook)
   - Honey pots used for bots
 * Email sent + optional calendar booking
-  - Sent as a `multipart/alternative` message: styled HTML (`build_email_html`) as the primary part, plain text (`build_email_body`) as the fallback part
+  - Two parallel pipelines share one `mailer.py`: booking (`build_book_email_html`/`build_book_email_body`/`send_book_email`) and enquiry (`build_enquiry_email_html`/`build_enquiry_email_body`/`send_enquiry_email`). Each is sent as a `multipart/alternative` message: styled HTML as the primary part, plain text as the fallback part
+  - Both pipelines' HTML builders call into the same shared `_render_html_shell()`/`_render_field_rows_html()` helpers rather than each having their own markup, so the two emails can't visually drift apart — see `docs/pipeline-architecture-visual-diagram.md` for the module breakdown of what's shared vs. per-pipeline
   - The mail client picks which part to render — HTML-capable clients show the styled version, anything that can't/won't render HTML (plaintext-only clients, some accessibility tools) automatically gets the plain-text part instead. No app-side branching needed; see `docs/development_journal.md` → "HTML email body + plain-text fallback for non-HTML recipients" for the full write-up
-  - The header logo in `build_email_html` is embedded as an inline CID attachment (`send_email` calls `.add_related()` on the html part), not a `static/images/...` `<img src>` — a raw SMTP message has no access to this app's `/static` mount, so the image has to travel inside the message itself. See `docs/development_journal.md` → "Implementing images to the html email file"
+  - The header logo in `_render_html_shell` is embedded as an inline CID attachment (the shared `_attach_logo_and_send()` calls `.add_related()` on the html part), not a `static/images/...` `<img src>` — a raw SMTP message has no access to this app's `/static` mount, so the image has to travel inside the message itself. See `docs/development_journal.md` → "Implementing images to the html email file"
 
 
 ## Frontend Envato - Template Breakdown
@@ -153,7 +155,7 @@ Built upon top of **Linoor** template, this repo uses mostly static `JavaScript 
 
 It does not include any dependencies through `NPM (Node Package Manager)`. However any `JavaScript` functionality or libraries from this point onwards implemented by myself will use `NPM` as static files can become out of date quickly, and require much more manual handling.
 
-See `docs/pipeline-architecture.md` for the full quote-submission pipeline diagram and module-by-module breakdown (frontend form → JS/no-JS split → validation → DB → email).
+See `docs/pipeline-architecture-visual-diagram.md` for the full booking/enquiry submission pipeline diagrams and module-by-module breakdown (frontend form → JS/no-JS split → validation → DB → email).
 
 ## Tools Used for Development - Table of Contents
 
@@ -211,3 +213,4 @@ See `docs/pipeline-architecture.md` for the full quote-submission pipeline diagr
 ---
 
 <br>
+

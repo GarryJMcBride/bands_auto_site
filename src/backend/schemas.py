@@ -11,12 +11,19 @@ import re
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 from src.backend._typing import Service
-from src.backend.validation import contains_injection, sanitise
+from src.backend.validation import (
+    check_no_blank_string_fields,
+    contains_injection,
+    sanitise,
+    validate_email_address,
+    validate_name,
+    validate_phone_number,
+)
 
-# ---- Pydantic Schema --------------------------------------------------
+# ---- Pydantic Schemas --------------------------------------------------
 
 
-class QuoteSubmission(BaseModel):
+class BookSubmission(BaseModel):
     username: str
     email: EmailStr
     phone: str
@@ -26,35 +33,17 @@ class QuoteSubmission(BaseModel):
     @field_validator("username")
     @classmethod
     def validate_username(cls, v: str) -> str:
-        v = sanitise(v)
-        if contains_injection(v):
-            raise ValueError("Invalid characters in name.")
-        if not re.match(r"^[a-zA-Z\s'\-]{2,64}$", v):
-            raise ValueError("Name must be 2–64 characters, letters only.")
-        return v
+        return validate_name(v)
 
     @field_validator("email")
     @classmethod
     def validate_email(cls, v: str) -> str:
-        v = sanitise(v).lower()
-        if contains_injection(v):
-            raise ValueError("Invalid characters in email.")
-        if len(v) > 254:
-            raise ValueError("Email must be 254 characters or fewer.")
-        # EmailStr from Pydantic already validates format, so we just return the sanitized value
-        return v
+        return validate_email_address(v)
 
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: str) -> str:
-        v = sanitise(v)
-        if contains_injection(v):
-            raise ValueError("Invalid characters in phone number.")
-        if not re.match(r"^\+?[0-9\s\-\(\)]{7,20}$", v):
-            raise ValueError(
-                "Phone number must be 7-20 digits, may include +, spaces, - or ()."
-            )
-        return v
+        return validate_phone_number(v)
 
     @field_validator("registration")
     @classmethod
@@ -78,24 +67,87 @@ class QuoteSubmission(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def check_no_field_is_blank(self) -> "QuoteSubmission":
+    def check_no_field_is_blank(self) -> "BookSubmission":
         """Belt-and-braces: ensure nothing slipped through as empty."""
-        for field, value in self.__dict__.items():
-            if isinstance(value, str) and not value.strip():
-                raise ValueError(f"{field} must not be empty.")
+        check_no_blank_string_fields(self.__dict__)
         return self
 
 
-# ---- Database Schema --------------------------------------------------
+class EnquirySubmission(BaseModel):
+    """The "Not Sure What Your Vehicle Needs?" enquiry form (`#contact-form`
+    in index.html) — a free-text alternative to BookSubmission for customers
+    who don't know which service they need yet."""
 
-CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS quote_submissions (
+    username: str
+    email: EmailStr
+    phone: str
+    subject: str
+    message: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return validate_name(v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return validate_email_address(v)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return validate_phone_number(v)
+
+    @field_validator("subject")
+    @classmethod
+    def validate_subject(cls, v: str) -> str:
+        v = sanitise(v)
+        if contains_injection(v):
+            raise ValueError("Invalid characters in subject.")
+        if not (2 <= len(v) <= 128):
+            raise ValueError("Subject must be 2–128 characters.")
+        return v
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        v = sanitise(v)
+        if contains_injection(v):
+            raise ValueError("Invalid characters in message.")
+        if not (2 <= len(v) <= 2000):
+            raise ValueError("Message must be 2–2000 characters.")
+        return v
+
+    @model_validator(mode="after")
+    def check_no_field_is_blank(self) -> "EnquirySubmission":
+        """Belt-and-braces: ensure nothing slipped through as empty."""
+        check_no_blank_string_fields(self.__dict__)
+        return self
+
+
+# ---- Database Schemas --------------------------------------------------
+
+CREATE_BOOK_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS book_submissions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username    VARCHAR(64)  NOT NULL,
     email       VARCHAR(254) NOT NULL,
     phone       VARCHAR(20)  NOT NULL,
     registration VARCHAR(7)   NOT NULL,
     service     VARCHAR(50)  NOT NULL,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+CREATE_ENQUIRY_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS enquiry_submissions (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username    VARCHAR(64)  NOT NULL,
+    email       VARCHAR(254) NOT NULL,
+    phone       VARCHAR(20)  NOT NULL,
+    subject     VARCHAR(128) NOT NULL,
+    message     TEXT         NOT NULL,
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 """

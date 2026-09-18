@@ -17,3 +17,18 @@ dependencies = [
     "slowapi>=0.1.9",
     "uvicorn>=0.42.0",
 ]
+
+[dependency-groups]
+lint = [
+    "ruff>=0.16.8",
+]
+test = [
+    "pytest>=9.1.1",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "BLE"]
+
+[tool.ruff]
+# Set the maximum line length where Ruff will force a wrap
+line-length = 120

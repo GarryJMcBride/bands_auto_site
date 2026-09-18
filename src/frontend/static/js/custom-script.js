@@ -954,28 +954,32 @@
   }
 
   //Contact Form Validation
-  if ($("#contact-form").length) {
-    $("#contact-form").validate({
-      rules: {
-        username: {
-          required: true
-        },
-        email: {
-          required: true,
-          email: true
-        },
-        phone: {
-          required: true
-        },
-        subject: {
-          required: true
-        },
-        message: {
-          required: true
-        }
-      }
-    });
-  }
+  // Commented out: this jQuery Validation Plugin call binds its own submit
+  // handler to #contact-form, the same element enquiryForm.ts attaches its
+  // own submit listener to. See docs/frontend-bloat-audit.md -> "Priority
+  // finding" for why this can silently interfere with the JS fetch() pipeline.
+  // if ($("#contact-form").length) {
+  //   $("#contact-form").validate({
+  //     rules: {
+  //       username: {
+  //         required: true
+  //       },
+  //       email: {
+  //         required: true,
+  //         email: true
+  //       },
+  //       phone: {
+  //         required: true
+  //       },
+  //       subject: {
+  //         required: true
+  //       },
+  //       message: {
+  //         required: true
+  //       }
+  //     }
+  //   });
+  // }
 
   // Scroll to a Specific Div
   if ($(".scroll-to-target").length) {

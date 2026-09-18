@@ -5,24 +5,23 @@ template rendering, and the primary endpoints for the B&S Autos web application.
 
 The application serves the homepage."""
 
-import mimetypes
 import logging
-from typing import AsyncGenerator
+import mimetypes
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from starlette.templating import Jinja2Templates
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.templating import Jinja2Templates
 
 from src.backend import config, schemas
-from src.backend.classes import db, SecurityHeadersMiddleware
-from src.backend.routers import handle_form_inputs
+from src.backend.classes import SecurityHeadersMiddleware, db
+from src.backend.routers import handle_book_inputs, handle_enquiry_inputs
 
 # Globals and Configurations
 # TODO: Use Pydantic settings instead to being ENV variables in
@@ -42,9 +41,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Database connection pool created")
 
     # If any database schema setup is needed, it can be done here
-    await db.ensure_schema(schemas.CREATE_TABLE_SQL)
+    await db.ensure_schema(schemas.CREATE_BOOK_TABLE_SQL)
+    await db.ensure_schema(schemas.CREATE_ENQUIRY_TABLE_SQL)
 
-    logger.info("Database schema ensured (quote_submissions table)")
+    logger.info(
+        "Database schema ensured (book_submissions, enquiry_submissions tables)"
+    )
 
     yield
     await db.close()
@@ -83,7 +85,8 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # ---- Endpoints, Routers and Static Files --------------------------------------------------
 
-app.include_router(handle_form_inputs.router)
+app.include_router(handle_book_inputs.router)
+app.include_router(handle_enquiry_inputs.router)
 
 # TODO: See todo.md for notes on updating the CSS paths as they require SCSS compile
 # Mount static files so FASTAPI can serve them to the browser
@@ -104,20 +107,27 @@ app.mount("/dist", StaticFiles(directory="src/frontend/dist"), name="dist")
 templates = Jinja2Templates(directory="src/frontend/templates/")
 
 
-# HTML Calls these Endpoints - Page navigation handled by HTML
-# ---------------
 # Endpoint for the index page
+# ---------------
+# Page navigation handled by HTML
 @app.get("/", response_class=HTMLResponse)
 def read_homepage(request: Request) -> HTMLResponse:
     """Renders the homepage template."""
 
     logger.info("Homepage accessed")
 
-    # Set by the no-JS form fallback (see submit_quote_python_pipeline) after it redirects
-    # back here, so the page can show a plain-HTML success/error message.
-    submitted = request.query_params.get("submitted")
+    # This route serves every "/" visit, not just the no-JS fallback — the
+    # query flag is only present when a no-JS form redirected here after POSTing.
+    # See docs/development_journal.md -> "Redirect-after-POST".
+    book_submitted = request.query_params.get("book_submitted")
+    enquiry_submitted = request.query_params.get("enquiry_submitted")
 
     # TODO: Implement Jinja for this
     return templates.TemplateResponse(
-        request=request, name="index.html", context={"submitted": submitted}
+        request=request,
+        name="index.html",
+        context={
+            "book_submitted": book_submitted,
+            "enquiry_submitted": enquiry_submitted,
+        },
     )
