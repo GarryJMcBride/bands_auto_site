@@ -62,6 +62,10 @@ list, change `Database.ensure_schema` (`classes.py`) to accept
 This is the smallest change that makes the column reach both fresh and
 already-deployed databases with no manual step.
 
+> **Superseded in part:** `scripts/db_migrate.py` now diffs `schemas.py` against the live
+> database and adds new columns, so the `MIGRATIONS_SQL` list is no longer needed — just add the
+> column to `CREATE_BOOK_TABLE_SQL` and run `python -m scripts.db_migrate --apply`.
+
 **Wiring it through the request flow** (`routers/handle_book_inputs.py`) —
 in both `submit_book_javascript_pipeline` and `submit_book_python_pipeline`,
 immediately after `BookSubmission` is built/validated:

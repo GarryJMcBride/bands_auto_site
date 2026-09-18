@@ -22,6 +22,15 @@ pytest                  # run Python tests
 pytest src/backend/tests/test_db.py    # run a single test file
 ```
 
+Database utility scripts (run from repo root; they read `DATABASE_URL` from `.env`):
+
+```bash
+python -m scripts.db_migrate           # dry run: diff schemas.py against the live DB
+python -m scripts.db_migrate --apply   # add missing tables/columns (additive only)
+python -m scripts.db_query tables      # tables + row counts (also: describe <t>, head <t> -n 5)
+python -m scripts.db_query sql "SELECT ..."   # ad-hoc query, read-only unless --write
+```
+
 TypeScript / frontend:
 
 ```bash
@@ -72,7 +81,7 @@ Static mounts: `/static` → `src/frontend/static`, `/dist` → `src/frontend/di
 ## Configuration & state
 
 - Environment variables load from `.env` via `python-dotenv`. Key vars: `DATABASE_URL` (Postgres, used by asyncpg), `ENVIRONMENT` (`development` enables `DEBUG`), and SMTP settings (`config.py`): `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`, `FROM_ADDR` (sender), `BUSINESS_EMAIL` (recipient). Email sending is functional (`send_book_email`/`send_enquiry_email` via `aiosmtplib`), but currently points at a **temporary personal Gmail app-password mailbox**, not a production ESP — see `todo.md` → `## 12. Email Delivery` before relying on it long-term. `FROM_ADDR` must match/be authorised by whatever account `SMTP_USER` authenticates as, or the send will be rejected.
-- Postgres table DDL is `CREATE_BOOK_TABLE_SQL` (`book_submissions`) and `CREATE_ENQUIRY_TABLE_SQL` (`enquiry_submissions`) in `schemas.py`, executed automatically in `lifespan()` (`app.py`) on every startup via `db.ensure_schema()`. There is no migration tool beyond that.
+- Postgres table DDL is `CREATE_BOOK_TABLE_SQL` (`book_submissions`) and `CREATE_ENQUIRY_TABLE_SQL` (`enquiry_submissions`) in `schemas.py`, executed automatically in `lifespan()` (`app.py`) on every startup via `db.ensure_schema()`. Because `CREATE TABLE IF NOT EXISTS` never alters an existing table, a column added to `schemas.py` won't reach an already-created database on its own — run `python -m scripts.db_migrate --apply` (`scripts/db_migrate.py`) to add it. It diffs `schemas.py`'s DDL (run in a throwaway scratch schema) against the live tables, applies only additive changes (missing tables/columns), and reports — never applies — dropped/changed columns and new `NOT NULL` columns without a `DEFAULT` on populated tables. `scripts/db_query.py` holds the read-oriented query helpers; both share `scripts/_db.py`, whose `DDL_STATEMENTS` list must include any new `CREATE_*_TABLE_SQL`.
 - FastAPI docs are disabled (`docs_url`/`redoc_url`/`openapi_url` = `None`).
 
 ## Working in this repo

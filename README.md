@@ -39,6 +39,16 @@ GRANT ALL ON SCHEMA public TO bands_user;
 
 Set `DATABASE_URL="postgresql://bands_user:yourpassword@localhost:5432/bands_autos"` in `.env`.
 
+After adding a column to a table in `src/backend/schemas.py`, existing databases need updating — the app only runs
+`CREATE TABLE IF NOT EXISTS`, which never alters an existing table. Preview and apply the change with:
+
+```bash
+python -m scripts.db_migrate           # dry run
+python -m scripts.db_migrate --apply
+```
+
+`python -m scripts.db_query tables|describe|head|sql` gives quick look-ups (see the docstring in `scripts/db_query.py`).
+
 ````
 
 ---
